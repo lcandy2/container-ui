@@ -21,8 +21,19 @@ struct ContainerInspectorView: View {
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
                 }
-                LabeledContent("Short ID", value: container.name)
+                LabeledContent("Display Name", value: container.displayName)
+                LabeledContent("Hostname", value: container.hostname)
                 LabeledContent("Image", value: container.image)
+                LabeledContent("Image Reference") {
+                    Text(container.imageReference)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+                LabeledContent("Image Digest") {
+                    Text(container.imageDigest.prefix(20) + "...")
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
                 LabeledContent("Status") {
                     HStack {
                         Circle()
@@ -36,11 +47,30 @@ struct ContainerInspectorView: View {
             Section("System Info") {
                 LabeledContent("Operating System", value: container.os)
                 LabeledContent("Architecture", value: container.arch)
-                if let addr = container.addr {
-                    LabeledContent("IP Address", value: addr)
-                } else {
-                    LabeledContent("IP Address", value: "Not available")
+                LabeledContent("Rosetta", value: container.rosetta ? "Enabled" : "Disabled")
+            }
+            
+            Section("Resources") {
+                LabeledContent("CPUs", value: "\(container.cpus)")
+                LabeledContent("Memory", value: container.memoryDisplay)
+            }
+            
+            Section("Network") {
+                if container.networks.isEmpty {
+                    Text("No network connections")
                         .foregroundStyle(.secondary)
+                } else {
+                    ForEach(container.networks) { network in
+                        VStack(alignment: .leading, spacing: 4) {
+                            LabeledContent("Network", value: network.network)
+                            LabeledContent("Address", value: network.address)
+                            LabeledContent("Gateway", value: network.gateway)
+                            if let hostname = network.hostname {
+                                LabeledContent("Hostname", value: hostname)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
             

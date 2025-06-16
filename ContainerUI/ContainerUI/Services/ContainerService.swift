@@ -41,7 +41,7 @@ class ContainerService: ObservableObject {
             // Ensure container system is started
             try await ensureContainerSystemStarted()
             
-            let output = try await executeCommand([containerCommand, "list"])
+            let output = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
             containers = try parseContainerList(output)
         } catch {
             errorMessage = "Failed to load containers: \(error.localizedDescription)"
@@ -63,7 +63,7 @@ class ContainerService: ObservableObject {
     private func ensureContainerSystemStarted() async throws {
         // Check if system is already running by trying a simple command
         do {
-            _ = try await executeCommand([containerCommand, "list"])
+            _ = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
         } catch {
             // If list fails, try starting the system
             print("Container system not running, attempting to start...")
@@ -181,57 +181,18 @@ class ContainerService: ObservableObject {
             return []
         }
         
-        let lines = trimmedOutput.components(separatedBy: .newlines)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        
-        // Always skip header line - first line is always the header
-        let dataLines = lines.count > 1 ? Array(lines.dropFirst()) : []
-        
-        var containers: [Container] = []
-        
-        for line in dataLines {
-            // Split by multiple spaces to handle the column format properly
-            let components = line.split(separator: " ", omittingEmptySubsequences: true)
-                .map { String($0) }
-            
-            // Expected format: ID  IMAGE  OS  ARCH  STATE  ADDR
-            if components.count >= 5 {
-                let containerID = components[0]
-                let image = components[1]
-                let os = components[2]
-                let arch = components[3]
-                let stateString = components[4]
-                let addr = components.count >= 6 ? components[5] : nil
-                
-                let status: ContainerStatus
-                switch stateString.lowercased() {
-                case "running":
-                    status = .running
-                case "stopped", "stop":
-                    status = .stopped
-                case "exited", "exit":
-                    status = .exited
-                default:
-                    status = .stopped
-                }
-                
-                // Clean up image name (remove registry prefix for display)
-                let displayImage = image.components(separatedBy: "/").last ?? image
-                
-                let container = Container(
-                    containerID: containerID,
-                    name: containerID.prefix(12).description, // Use first 12 chars as display name
-                    image: displayImage,
-                    os: os,
-                    arch: arch,
-                    status: status,
-                    addr: addr
-                )
-                containers.append(container)
-            }
+        // Parse JSON output from container ls -a --format json
+        guard let data = trimmedOutput.data(using: .utf8) else {
+            throw ContainerError.invalidOutput
         }
         
-        return containers
+        do {
+            let containerJSONList = try JSONDecoder().decode([ContainerJSON].self, from: data)
+            return containerJSONList.map { $0.toContainer() }
+        } catch {
+            print("JSON parsing error: \(error)")
+            throw ContainerError.invalidOutput
+        }
     }
     
     private func parseImageList(_ output: String) throws -> [ContainerImage] {

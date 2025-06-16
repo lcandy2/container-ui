@@ -60,14 +60,22 @@ class ContainerXPCServiceManager {
                         
                         let addr = dict["addr"] as? String
                         
+                        // TODO: Update XPC service to use new Container model with JSON parsing
+                        // For now, create a minimal container with available fields
                         return Container(
                             containerID: containerID,
                             name: name,
                             image: image,
+                            imageReference: image,
+                            imageDigest: "",
+                            hostname: name,
+                            status: status,
                             os: os,
                             arch: arch,
-                            status: status,
-                            addr: addr
+                            cpus: 0,
+                            memoryInBytes: 0,
+                            networks: [],
+                            rosetta: false
                         )
                     }
                     continuation.resume(returning: parsedContainers)
