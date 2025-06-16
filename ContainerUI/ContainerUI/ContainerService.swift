@@ -15,17 +15,31 @@ class ContainerService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let containerCommand = "/usr/local/bin/container"
+    private var containerCommand: String {
+        let possiblePaths = [
+            "/usr/local/bin/container",
+            "/opt/homebrew/bin/container",
+            "/usr/bin/container"
+        ]
+        
+        for path in possiblePaths {
+            if FileManager.default.fileExists(atPath: path) {
+                return path
+            }
+        }
+        
+        return "container" // Fallback to PATH lookup
+    }
     
     func refreshContainers() async {
         isLoading = true
         errorMessage = nil
         
         do {
-            let output = try await executeCommand([containerCommand, "list", "--format", "json"])
+            let output = try await executeCommand([containerCommand, "list"])
             containers = try parseContainerList(output)
         } catch {
-            errorMessage = "Failed to load containers: \(error.localizedDescription)"
+            errorMessage = "Failed to load containers: \(error.localizedDescription)\n\nNote: This app requires sandboxing to be disabled to execute the container CLI. Please disable App Sandbox in the project settings or run from Xcode."
             print("Container list error: \(error)")
         }
         
@@ -59,8 +73,11 @@ class ContainerService: ObservableObject {
             
             process.standardOutput = pipe
             process.standardError = errorPipe
-            process.arguments = Array(arguments.dropFirst())
-            process.executableURL = URL(fileURLWithPath: arguments.first ?? "")
+            
+            // Use shell to handle PATH resolution and sandbox issues
+            process.executableURL = URL(fileURLWithPath: "/bin/sh")
+            let commandString = arguments.joined(separator: " ")
+            process.arguments = ["-c", commandString]
             
             process.terminationHandler = { process in
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()

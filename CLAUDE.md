@@ -23,7 +23,15 @@ ContainerUI is a macOS SwiftUI application built with Xcode. It's a developer to
 ## Development Notes
 
 - App runs in sandbox mode with user-selected files access (readonly)
+- **Important**: To execute the `container` CLI tool, App Sandbox must be disabled in project settings (`ENABLE_APP_SANDBOX = NO`)
 - Uses Swift's upcoming feature for member import visibility
 - Targets macOS deployment target 15.0 minimum
 - String catalogs are enabled for localization
 - Code signing is set to automatic
+
+## Container CLI Integration
+
+- App integrates with Apple's `container` CLI tool
+- Supports paths: `/usr/local/bin/container`, `/opt/homebrew/bin/container`, or PATH lookup
+- Requires sandboxing to be disabled for CLI execution
+- Commands used: `container list`, `container start/stop <name>`, `container rm <name>`
