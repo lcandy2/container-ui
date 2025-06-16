@@ -39,9 +39,12 @@ class ContainerXPCServiceManager {
                 // Parse result and convert to Container objects
                 if let containers = result["containers"] as? [[String: Any]] {
                     let parsedContainers = containers.compactMap { dict -> Container? in
-                        guard let name = dict["name"] as? String,
+                        guard let containerID = dict["containerID"] as? String,
+                              let name = dict["name"] as? String,
                               let image = dict["image"] as? String,
-                              let statusString = dict["status"] as? String else {
+                              let statusString = dict["status"] as? String,
+                              let os = dict["os"] as? String,
+                              let arch = dict["arch"] as? String else {
                             return nil
                         }
                         
@@ -55,10 +58,16 @@ class ContainerXPCServiceManager {
                             status = .exited
                         }
                         
+                        let addr = dict["addr"] as? String
+                        
                         return Container(
+                            containerID: containerID,
                             name: name,
                             image: image,
-                            status: status
+                            os: os,
+                            arch: arch,
+                            status: status,
+                            addr: addr
                         )
                     }
                     continuation.resume(returning: parsedContainers)

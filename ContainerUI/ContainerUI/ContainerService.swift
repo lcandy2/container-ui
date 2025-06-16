@@ -73,23 +73,23 @@ class ContainerService: ObservableObject {
         }
     }
     
-    func startContainer(_ containerName: String) async throws {
-        _ = try await executeCommand([containerCommand, "start", containerName])
+    func startContainer(_ containerID: String) async throws {
+        _ = try await executeCommand([containerCommand, "start", containerID])
     }
     
-    func stopContainer(_ containerName: String) async throws {
-        _ = try await executeCommand([containerCommand, "stop", containerName])
+    func stopContainer(_ containerID: String) async throws {
+        _ = try await executeCommand([containerCommand, "stop", containerID])
     }
     
-    func deleteContainer(_ containerName: String) async throws {
-        _ = try await executeCommand([containerCommand, "delete", containerName])
+    func deleteContainer(_ containerID: String) async throws {
+        _ = try await executeCommand([containerCommand, "delete", containerID])
     }
     
     func deleteImage(_ imageName: String) async throws {
         _ = try await executeCommand([containerCommand, "images", "delete", imageName])
     }
     
-    func getContainerLogs(_ containerName: String, lines: Int? = nil, follow: Bool = false) async throws -> String {
+    func getContainerLogs(_ containerID: String, lines: Int? = nil, follow: Bool = false) async throws -> String {
         var args = [containerCommand, "logs"]
         if let lines = lines {
             args.append(contentsOf: ["-n", "\(lines)"])
@@ -97,13 +97,13 @@ class ContainerService: ObservableObject {
         if follow {
             args.append("-f")
         }
-        args.append(containerName)
+        args.append(containerID)
         
         return try await executeCommand(args)
     }
     
-    func getContainerBootLogs(_ containerName: String) async throws -> String {
-        let args = [containerCommand, "logs", "--boot", containerName]
+    func getContainerBootLogs(_ containerID: String) async throws -> String {
+        let args = [containerCommand, "logs", "--boot", containerID]
         return try await executeCommand(args)
     }
     
@@ -117,10 +117,10 @@ class ContainerService: ObservableObject {
         _ = try await executeCommand(args)
     }
     
-    func openTerminal(for containerName: String) async throws {
+    func openTerminal(for containerID: String) async throws {
         let process = Process()
         process.launchPath = "/usr/bin/open"
-        process.arguments = ["-a", "Terminal", "--args", containerCommand, "exec", "-ti", containerName, "sh"]
+        process.arguments = ["-a", "Terminal", "--args", containerCommand, "exec", "-ti", containerID, "sh"]
         process.launch()
     }
     
@@ -195,9 +195,12 @@ class ContainerService: ObservableObject {
             
             // Expected format: ID  IMAGE  OS  ARCH  STATE  ADDR
             if components.count >= 5 {
-                let id = components[0]
+                let containerID = components[0]
                 let image = components[1]
+                let os = components[2]
+                let arch = components[3]
                 let stateString = components[4]
+                let addr = components.count >= 6 ? components[5] : nil
                 
                 let status: ContainerStatus
                 switch stateString.lowercased() {
@@ -215,9 +218,13 @@ class ContainerService: ObservableObject {
                 let displayImage = image.components(separatedBy: "/").last ?? image
                 
                 let container = Container(
-                    name: id,
+                    containerID: containerID,
+                    name: containerID.prefix(12).description, // Use first 12 chars as display name
                     image: displayImage,
-                    status: status
+                    os: os,
+                    arch: arch,
+                    status: status,
+                    addr: addr
                 )
                 containers.append(container)
             }

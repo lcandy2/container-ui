@@ -10,9 +10,13 @@ import SwiftUI
 
 struct Container: Identifiable, Hashable {
     let id = UUID()
+    let containerID: String  // The actual container ID from the command
     let name: String
     let image: String
+    let os: String
+    let arch: String
     let status: ContainerStatus
+    let addr: String?  // Optional since it might be empty for stopped containers
 }
 
 struct ContainerImage: Identifiable, Hashable {
@@ -183,7 +187,7 @@ struct ContentView: View {
     private func startContainer(_ container: Container) {
         Task {
             do {
-                try await containerService.startContainer(container.name)
+                try await containerService.startContainer(container.containerID)
                 await containerService.refreshContainers()
             } catch {
                 print("Failed to start container: \(error)")
@@ -194,7 +198,7 @@ struct ContentView: View {
     private func stopContainer(_ container: Container) {
         Task {
             do {
-                try await containerService.stopContainer(container.name)
+                try await containerService.stopContainer(container.containerID)
                 await containerService.refreshContainers()
             } catch {
                 print("Failed to stop container: \(error)")
@@ -205,7 +209,7 @@ struct ContentView: View {
     private func deleteContainer(_ container: Container) {
         Task {
             do {
-                try await containerService.deleteContainer(container.name)
+                try await containerService.deleteContainer(container.containerID)
                 await containerService.refreshContainers()
             } catch {
                 print("Failed to delete container: \(error)")
@@ -489,7 +493,12 @@ struct ContainerInspectorView: View {
     var body: some View {
         List {
             Section("Container Info") {
-                LabeledContent("Name", value: container.name)
+                LabeledContent("Container ID") {
+                    Text(container.containerID)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+                LabeledContent("Short ID", value: container.name)
                 LabeledContent("Image", value: container.image)
                 LabeledContent("Status") {
                     HStack {
@@ -501,11 +510,22 @@ struct ContainerInspectorView: View {
                 }
             }
             
+            Section("System Info") {
+                LabeledContent("Operating System", value: container.os)
+                LabeledContent("Architecture", value: container.arch)
+                if let addr = container.addr {
+                    LabeledContent("IP Address", value: addr)
+                } else {
+                    LabeledContent("IP Address", value: "Not available")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
             Section("Actions") {
                 Button("Start Container") {
                     Task {
                         do {
-                            try await containerService.startContainer(container.name)
+                            try await containerService.startContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to start container: \(error)")
@@ -517,7 +537,7 @@ struct ContainerInspectorView: View {
                 Button("Stop Container") {
                     Task {
                         do {
-                            try await containerService.stopContainer(container.name)
+                            try await containerService.stopContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to stop container: \(error)")
@@ -529,8 +549,8 @@ struct ContainerInspectorView: View {
                 Button("Restart Container") {
                     Task {
                         do {
-                            try await containerService.stopContainer(container.name)
-                            try await containerService.startContainer(container.name)
+                            try await containerService.stopContainer(container.containerID)
+                            try await containerService.startContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to restart container: \(error)")
@@ -547,7 +567,7 @@ struct ContainerInspectorView: View {
                 Button("Open Terminal") {
                     Task {
                         do {
-                            try await containerService.openTerminal(for: container.name)
+                            try await containerService.openTerminal(for: container.containerID)
                         } catch {
                             print("Failed to open terminal: \(error)")
                         }
@@ -559,7 +579,7 @@ struct ContainerInspectorView: View {
                 Button("Delete Container", role: .destructive) {
                     Task {
                         do {
-                            try await containerService.deleteContainer(container.name)
+                            try await containerService.deleteContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to delete container: \(error)")
@@ -652,7 +672,7 @@ struct ContainerDetailView: View {
                 Button("Start") {
                     Task {
                         do {
-                            try await containerService.startContainer(container.name)
+                            try await containerService.startContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to start container: \(error)")
@@ -665,7 +685,7 @@ struct ContainerDetailView: View {
                 Button("Stop") {
                     Task {
                         do {
-                            try await containerService.stopContainer(container.name)
+                            try await containerService.stopContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to stop container: \(error)")
@@ -678,8 +698,8 @@ struct ContainerDetailView: View {
                 Button("Restart") {
                     Task {
                         do {
-                            try await containerService.stopContainer(container.name)
-                            try await containerService.startContainer(container.name)
+                            try await containerService.stopContainer(container.containerID)
+                            try await containerService.startContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to restart container: \(error)")
@@ -693,7 +713,7 @@ struct ContainerDetailView: View {
                 Button("Open Terminal") {
                     Task {
                         do {
-                            try await containerService.openTerminal(for: container.name)
+                            try await containerService.openTerminal(for: container.containerID)
                         } catch {
                             print("Failed to open terminal: \(error)")
                         }
@@ -709,7 +729,7 @@ struct ContainerDetailView: View {
                 Button("Delete", role: .destructive) {
                     Task {
                         do {
-                            try await containerService.deleteContainer(container.name)
+                            try await containerService.deleteContainer(container.containerID)
                             await containerService.refreshContainers()
                         } catch {
                             print("Failed to delete container: \(error)")
@@ -912,10 +932,10 @@ struct LogsView: View {
             do {
                 let result: String
                 if showBootLogs {
-                    result = try await containerService.getContainerBootLogs(container.name)
+                    result = try await containerService.getContainerBootLogs(container.containerID)
                 } else {
                     let lines = lineLimit == -1 ? nil : lineLimit
-                    result = try await containerService.getContainerLogs(container.name, lines: lines)
+                    result = try await containerService.getContainerLogs(container.containerID, lines: lines)
                 }
                 
                 await MainActor.run {
