@@ -1,10 +1,13 @@
 # ContainerUI
 
+> ⚠️ **Under Rapid Development** - This project is actively being developed with frequent updates and new features.
+
 A native macOS SwiftUI application for managing containers using Apple's built-in `container` CLI tool. ContainerUI provides an intuitive, three-column interface following Apple's Human Interface Guidelines for seamless container management on macOS.
 
 ![macOS](https://img.shields.io/badge/macOS-15.0+-blue.svg)
 ![Swift](https://img.shields.io/badge/Swift-5.0+-orange.svg)
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-Native-green.svg)
+![Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)
 
 ## Features
 
@@ -65,7 +68,7 @@ which container
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/lcandy2/container-ui.git
    cd container-ui
    ```
 
@@ -173,12 +176,16 @@ ContainerUI integrates with Apple's `container` CLI using JSON output for reliab
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Follow the existing architecture patterns
+> 🚧 **Active Development Notice** - Due to rapid development, please check existing issues and PRs before starting work to avoid conflicts.
+
+1. Fork the repository at [https://github.com/lcandy2/container-ui](https://github.com/lcandy2/container-ui)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Follow the existing architecture patterns (see `CLAUDE.md` for guidance)
 4. Ensure all features work with the JSON CLI format
 5. Test thoroughly on macOS 15.0+
-6. Submit a pull request
+6. Commit your changes (`git commit -m 'Add amazing feature'`)
+7. Push to the branch (`git push origin feature/amazing-feature`)
+8. Open a Pull Request
 
 ## License
 
@@ -186,10 +193,13 @@ Copyright © 2025 https://github.com/lcandy2. All Rights Reserved.
 
 ## Support
 
-For issues and feature requests, please check:
-- The built-in error messages and alerts
-- System logs for CLI integration issues
-- Container system status in the System tab
+For issues and feature requests:
+- **GitHub Issues**: [https://github.com/lcandy2/container-ui/issues](https://github.com/lcandy2/container-ui/issues)
+- **Troubleshooting**: Check the built-in error messages and alerts
+- **CLI Integration**: Review system logs for container tool issues
+- **System Status**: Use the System tab for runtime diagnostics
+
+> 💡 **Development Updates** - Check the repository frequently for new features and improvements as this project is under active development.
 
 ---
 
