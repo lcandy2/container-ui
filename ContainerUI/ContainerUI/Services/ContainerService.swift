@@ -53,7 +53,7 @@ class ContainerService: ObservableObject {
     
     func refreshImages() async {
         do {
-            let output = try await executeCommand([containerCommand, "images", "list"])
+            let output = try await executeCommand([containerCommand, "image", "ls", "--format", "json"])
             images = try parseImageList(output)
         } catch {
             print("Image list error: \(error)")
@@ -201,35 +201,18 @@ class ContainerService: ObservableObject {
             return []
         }
         
-        let lines = trimmedOutput.components(separatedBy: .newlines)
-            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        
-        // Skip header line if present
-        let dataLines = lines.count > 1 && lines[0].contains("NAME") ? Array(lines.dropFirst()) : lines
-        
-        var images: [ContainerImage] = []
-        
-        for line in dataLines {
-            // Split by multiple spaces to handle the column format properly
-            let components = line.split(separator: " ", omittingEmptySubsequences: true)
-                .map { String($0) }
-            
-            // Expected format: NAME  TAG  DIGEST
-            if components.count >= 3 {
-                let name = components[0]
-                let tag = components[1]
-                let digest = components[2]
-                
-                let image = ContainerImage(
-                    name: name,
-                    tag: tag,
-                    digest: digest
-                )
-                images.append(image)
-            }
+        // Parse JSON output from container image ls --format json
+        guard let data = trimmedOutput.data(using: .utf8) else {
+            throw ContainerError.invalidOutput
         }
         
-        return images
+        do {
+            let imageJSONList = try JSONDecoder().decode([ContainerImageJSON].self, from: data)
+            return imageJSONList.map { $0.toContainerImage() }
+        } catch {
+            print("Image JSON parsing error: \(error)")
+            throw ContainerError.invalidOutput
+        }
     }
     
     // MARK: - System Management

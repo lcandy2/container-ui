@@ -17,10 +17,30 @@ struct ImageInspectorView: View {
             Section("Image Info") {
                 LabeledContent("Name", value: image.name)
                 LabeledContent("Tag", value: image.tag)
+                LabeledContent("Display Name", value: image.displayName)
+                LabeledContent("Repository", value: image.repository)
+                LabeledContent("Registry", value: image.registry)
+            }
+            
+            Section("Reference") {
+                LabeledContent("Full Reference") {
+                    Text(image.fullReference)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
                 LabeledContent("Digest") {
                     Text(image.digest)
                         .font(.system(.caption, design: .monospaced))
                         .textSelection(.enabled)
+                }
+            }
+            
+            Section("Technical Details") {
+                LabeledContent("Size", value: image.sizeDisplay)
+                LabeledContent("Media Type", value: image.mediaType)
+                LabeledContent("Architecture") {
+                    Text(image.mediaType.contains("index") ? "Multi-architecture" : "Single-architecture")
+                        .foregroundStyle(image.mediaType.contains("index") ? .blue : .secondary)
                 }
             }
             

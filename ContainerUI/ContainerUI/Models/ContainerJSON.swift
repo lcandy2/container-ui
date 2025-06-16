@@ -26,13 +26,13 @@ struct ContainerNetworkJSON: Codable {
 struct ContainerConfigurationJSON: Codable {
     let id: String
     let hostname: String
-    let image: ContainerImageJSON
+    let image: ContainerImageRefJSON
     let platform: ContainerPlatformJSON
     let resources: ContainerResourcesJSON
     let rosetta: Bool
 }
 
-struct ContainerImageJSON: Codable {
+struct ContainerImageRefJSON: Codable {
     let reference: String
     let descriptor: ContainerImageDescriptorJSON
 }
