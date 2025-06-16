@@ -207,7 +207,7 @@ class ContainerService: ObservableObject {
         }
         
         do {
-            let imageJSONList = try JSONDecoder().decode([ContainerImageJSON].self, from: data)
+            let imageJSONList = try JSONDecoder().decode([ImageListItemJSON].self, from: data)
             return imageJSONList.map { $0.toContainerImage() }
         } catch {
             print("Image JSON parsing error: \(error)")
