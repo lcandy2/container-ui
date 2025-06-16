@@ -48,160 +48,164 @@ enum ContainerStatus: Hashable {
     }
 }
 
-enum SidebarItem: Hashable {
+enum AppTab: String, CaseIterable {
+    case containers = "Containers"
+    case images = "Images"
+    
+    var systemImage: String {
+        switch self {
+        case .containers: return "shippingbox"
+        case .images: return "disc"
+        }
+    }
+}
+
+enum SelectedItem: Hashable {
     case container(Container)
     case image(ContainerImage)
 }
 
 struct ContentView: View {
     @StateObject private var containerService = ContainerService()
-    @State private var selectedContainer: Container?
-    @State private var selectedImage: ContainerImage?
-    @State private var selectedItem: SidebarItem?
+    @State private var selectedTab: AppTab = .containers
+    @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
     @State private var showingLogsSheet = false
     @State private var logsContainer: Container?
     
     var body: some View {
-        NavigationSplitView {
-            VStack(alignment: .leading, spacing: 0) {
+        HStack(spacing: 0) {
+            // Left Sidebar - Tabs
+            VStack(spacing: 0) {
+                Text("Container UI")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .padding()
+                
+                Divider()
+                
+                VStack(spacing: 8) {
+                    ForEach(AppTab.allCases, id: \.self) { tab in
+                        Button(action: {
+                            selectedTab = tab
+                            selectedItem = nil // Clear selection when switching tabs
+                        }) {
+                            HStack {
+                                Image(systemName: tab.systemImage)
+                                    .frame(width: 16)
+                                Text(tab.rawValue)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(selectedTab == tab ? Color.accentColor.opacity(0.2) : Color.clear)
+                            .foregroundColor(selectedTab == tab ? .accentColor : .primary)
+                            .cornerRadius(6)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                
+                Spacer()
+                
+                VStack(spacing: 8) {
+                    Button("Refresh") {
+                        refreshAll()
+                    }
+                    .buttonStyle(.bordered)
+                    
+                    Button("New Container") {
+                        showingNewContainerSheet = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding()
+            }
+            .frame(width: 180)
+            .background(Color(NSColor.controlBackgroundColor))
+            
+            Divider()
+            
+            // Center Content Area
+            VStack(spacing: 0) {
+                // Header
                 HStack {
-                    Text("Container Manager")
+                    Text(selectedTab.rawValue)
                         .font(.title2)
                         .fontWeight(.semibold)
                     
                     Spacer()
                     
-                    Button("Refresh") {
-                        refreshAll()
+                    if containerService.isLoading {
+                        ProgressView()
+                            .scaleEffect(0.7)
                     }
-                    .buttonStyle(.bordered)
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
+                .padding()
                 
-                if containerService.containers.isEmpty && containerService.images.isEmpty && !containerService.isLoading {
-                    VStack(spacing: 16) {
-                        Image(systemName: "shippingbox")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.secondary)
-                        
-                        Text("No containers or images found")
-                            .font(.title2)
-                            .foregroundStyle(.secondary)
-                        
-                        Text("Create a new container to get started")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                        
-                        Button("New Container") {
-                            showingNewContainerSheet = true
+                Divider()
+                
+                // Content List
+                if selectedTab == .containers {
+                    ContainerListView(
+                        containers: containerService.containers,
+                        selectedItem: $selectedItem,
+                        onContainerAction: { action, container in
+                            handleContainerAction(action, container)
                         }
-                        .buttonStyle(.borderedProminent)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    )
                 } else {
-                    List(selection: $selectedItem) {
-                        Section("Containers") {
-                            if containerService.containers.isEmpty {
-                                Text("No containers")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            } else {
-                                ForEach(containerService.containers) { container in
-                                    ContainerRow(container: container)
-                                        .tag(SidebarItem.container(container))
-                                        .contextMenu {
-                                            Button("Start") {
-                                                startContainer(container)
-                                            }
-                                            .disabled(container.status == .running)
-                                            
-                                            Button("Stop") {
-                                                stopContainer(container)
-                                            }
-                                            .disabled(container.status != .running)
-                                            
-                                            Button("View Logs") {
-                                                showLogs(for: container)
-                                            }
-                                            
-                                            Divider()
-                                            
-                                            Button("Delete", role: .destructive) {
-                                                deleteContainer(container)
-                                            }
-                                        }
-                                }
-                            }
+                    ImageListView(
+                        images: containerService.images,
+                        selectedItem: $selectedItem,
+                        onImageAction: { action, image in
+                            handleImageAction(action, image)
                         }
-                        
-                        Section("Images") {
-                            if containerService.images.isEmpty {
-                                Text("No images")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            } else {
-                                ForEach(containerService.images) { image in
-                                    ImageRow(image: image)
-                                        .tag(SidebarItem.image(image))
-                                        .contextMenu {
-                                            Button("Create Container") {
-                                                // TODO: Create container from image
-                                            }
-                                            
-                                            Divider()
-                                            
-                                            Button("Delete", role: .destructive) {
-                                                deleteImage(image)
-                                            }
-                                        }
-                                }
-                            }
-                        }
-                    }
-                    .listStyle(.sidebar)
+                    )
                 }
             }
-        } detail: {
+            .frame(minWidth: 300)
+            
+            Divider()
+            
+            // Right Sidebar - Actions
             if let selectedItem = selectedItem {
                 switch selectedItem {
                 case .container(let container):
-                    ContainerDetailView(container: container)
-                        .environmentObject(containerService)
+                    ContainerActionsView(
+                        container: container,
+                        containerService: containerService,
+                        onShowLogs: { showLogs(for: container) }
+                    )
                 case .image(let image):
-                    ImageDetailView(image: image)
-                        .environmentObject(containerService)
+                    ImageActionsView(
+                        image: image,
+                        containerService: containerService
+                    )
                 }
             } else {
                 VStack {
-                    Image(systemName: "shippingbox")
-                        .font(.system(size: 64))
+                    Image(systemName: selectedTab.systemImage)
+                        .font(.system(size: 48))
+                        .foregroundStyle(.tertiary)
+                    
+                    Text("Select a \(selectedTab.rawValue.lowercased().dropLast())")
+                        .font(.headline)
                         .foregroundStyle(.secondary)
-                    Text("Select a container or image")
-                        .font(.title2)
-                        .foregroundStyle(.secondary)
+                    
+                    Text("Choose an item to see available actions")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
+                .frame(width: 250)
+                .frame(maxHeight: .infinity)
             }
         }
-        .frame(minWidth: 800, minHeight: 600)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button("New Container") {
-                    showingNewContainerSheet = true
-                }
-                .buttonStyle(.borderedProminent)
-            }
-        }
+        .frame(minWidth: 900, minHeight: 600)
         .task {
             await refreshAll()
-        }
-        .overlay {
-            if containerService.isLoading {
-                ProgressView("Loading containers...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.regularMaterial)
-            }
         }
         .alert("Error", isPresented: .constant(containerService.errorMessage != nil)) {
             Button("OK") {
@@ -274,6 +278,157 @@ struct ContentView: View {
     private func showLogs(for container: Container) {
         logsContainer = container
         showingLogsSheet = true
+    }
+    
+    private func handleContainerAction(_ action: String, _ container: Container) {
+        switch action {
+        case "start":
+            startContainer(container)
+        case "stop":
+            stopContainer(container)
+        case "delete":
+            deleteContainer(container)
+        case "logs":
+            showLogs(for: container)
+        default:
+            break
+        }
+    }
+    
+    private func handleImageAction(_ action: String, _ image: ContainerImage) {
+        switch action {
+        case "delete":
+            deleteImage(image)
+        case "create":
+            Task {
+                do {
+                    try await containerService.createAndRunContainer(image: image.displayName)
+                    await containerService.refreshContainers()
+                } catch {
+                    print("Failed to create container: \(error)")
+                }
+            }
+        default:
+            break
+        }
+    }
+}
+
+struct ContainerListView: View {
+    let containers: [Container]
+    @Binding var selectedItem: SelectedItem?
+    let onContainerAction: (String, Container) -> Void
+    
+    var body: some View {
+        if containers.isEmpty {
+            VStack(spacing: 16) {
+                Image(systemName: "shippingbox")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.secondary)
+                
+                Text("No containers")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                
+                Text("Create a new container to get started")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List(containers, id: \.id, selection: Binding(
+                get: {
+                    if case .container(let container) = selectedItem {
+                        return container
+                    }
+                    return nil
+                },
+                set: { container in
+                    if let container = container {
+                        selectedItem = .container(container)
+                    }
+                }
+            )) { container in
+                ContainerRow(container: container)
+                    .tag(container)
+                    .contextMenu {
+                        Button("Start") {
+                            onContainerAction("start", container)
+                        }
+                        .disabled(container.status == .running)
+                        
+                        Button("Stop") {
+                            onContainerAction("stop", container)
+                        }
+                        .disabled(container.status != .running)
+                        
+                        Button("View Logs") {
+                            onContainerAction("logs", container)
+                        }
+                        
+                        Divider()
+                        
+                        Button("Delete", role: .destructive) {
+                            onContainerAction("delete", container)
+                        }
+                    }
+            }
+            .listStyle(.plain)
+        }
+    }
+}
+
+struct ImageListView: View {
+    let images: [ContainerImage]
+    @Binding var selectedItem: SelectedItem?
+    let onImageAction: (String, ContainerImage) -> Void
+    
+    var body: some View {
+        if images.isEmpty {
+            VStack(spacing: 16) {
+                Image(systemName: "disc")
+                    .font(.system(size: 48))
+                    .foregroundStyle(.secondary)
+                
+                Text("No images")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                
+                Text("Pull an image to get started")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List(images, id: \.id, selection: Binding(
+                get: {
+                    if case .image(let image) = selectedItem {
+                        return image
+                    }
+                    return nil
+                },
+                set: { image in
+                    if let image = image {
+                        selectedItem = .image(image)
+                    }
+                }
+            )) { image in
+                ImageRow(image: image)
+                    .tag(image)
+                    .contextMenu {
+                        Button("Create Container") {
+                            onImageAction("create", image)
+                        }
+                        
+                        Divider()
+                        
+                        Button("Delete", role: .destructive) {
+                            onImageAction("delete", image)
+                        }
+                    }
+            }
+            .listStyle(.plain)
+        }
     }
 }
 
@@ -394,6 +549,248 @@ struct ImageDetailView: View {
             Spacer()
         }
         .padding()
+    }
+}
+
+struct ContainerActionsView: View {
+    let container: Container
+    @ObservedObject var containerService: ContainerService
+    let onShowLogs: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text(container.name)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    Spacer()
+                    
+                    Text(container.status.displayName)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(container.status.color.opacity(0.2))
+                        .foregroundColor(container.status.color)
+                        .clipShape(Capsule())
+                }
+                
+                Text(container.image)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            
+            Divider()
+            
+            // Actions
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Actions")
+                    .font(.headline)
+                    .padding(.horizontal)
+                    .padding(.top)
+                
+                VStack(spacing: 4) {
+                    ActionButton(
+                        title: "Start",
+                        systemImage: "play.fill",
+                        color: .green,
+                        disabled: container.status == .running
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.startContainer(container.name)
+                                await containerService.refreshContainers()
+                            } catch {
+                                print("Failed to start container: \(error)")
+                            }
+                        }
+                    }
+                    
+                    ActionButton(
+                        title: "Stop",
+                        systemImage: "stop.fill",
+                        color: .orange,
+                        disabled: container.status != .running
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.stopContainer(container.name)
+                                await containerService.refreshContainers()
+                            } catch {
+                                print("Failed to stop container: \(error)")
+                            }
+                        }
+                    }
+                    
+                    ActionButton(
+                        title: "Restart",
+                        systemImage: "arrow.clockwise",
+                        color: .blue
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.stopContainer(container.name)
+                                try await containerService.startContainer(container.name)
+                                await containerService.refreshContainers()
+                            } catch {
+                                print("Failed to restart container: \(error)")
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    ActionButton(
+                        title: "View Logs",
+                        systemImage: "doc.text",
+                        color: .blue
+                    ) {
+                        onShowLogs()
+                    }
+                    
+                    ActionButton(
+                        title: "Open Terminal",
+                        systemImage: "terminal",
+                        color: .blue
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.openTerminal(for: container.name)
+                            } catch {
+                                print("Failed to open terminal: \(error)")
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    ActionButton(
+                        title: "Delete",
+                        systemImage: "trash",
+                        color: .red
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.deleteContainer(container.name)
+                                await containerService.refreshContainers()
+                            } catch {
+                                print("Failed to delete container: \(error)")
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            Spacer()
+        }
+        .frame(width: 250)
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+struct ImageActionsView: View {
+    let image: ContainerImage
+    @ObservedObject var containerService: ContainerService
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            VStack(alignment: .leading, spacing: 8) {
+                Text(image.displayName)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                
+                Text(image.digest.prefix(12))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            
+            Divider()
+            
+            // Actions
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Actions")
+                    .font(.headline)
+                    .padding(.horizontal)
+                    .padding(.top)
+                
+                VStack(spacing: 4) {
+                    ActionButton(
+                        title: "Create Container",
+                        systemImage: "plus.rectangle",
+                        color: .blue
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.createAndRunContainer(image: image.displayName)
+                                await containerService.refreshContainers()
+                            } catch {
+                                print("Failed to create container: \(error)")
+                            }
+                        }
+                    }
+                    
+                    Divider()
+                        .padding(.vertical, 4)
+                    
+                    ActionButton(
+                        title: "Delete Image",
+                        systemImage: "trash",
+                        color: .red
+                    ) {
+                        Task {
+                            do {
+                                try await containerService.deleteImage(image.displayName)
+                                await containerService.refreshImages()
+                            } catch {
+                                print("Failed to delete image: \(error)")
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            Spacer()
+        }
+        .frame(width: 250)
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+struct ActionButton: View {
+    let title: String
+    let systemImage: String
+    let color: Color
+    var disabled: Bool = false
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: systemImage)
+                    .frame(width: 16)
+                    .foregroundColor(disabled ? .secondary : color)
+                
+                Text(title)
+                    .foregroundColor(disabled ? .secondary : .primary)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(disabled ? Color.clear : Color(NSColor.controlColor))
+            .cornerRadius(6)
+        }
+        .buttonStyle(.plain)
+        .disabled(disabled)
     }
 }
 
