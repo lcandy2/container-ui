@@ -13,6 +13,7 @@ internal import Combine
 class ContainerService: ObservableObject {
     @Published var containers: [Container] = []
     @Published var images: [ContainerImage] = []
+    @Published var systemInfo: SystemInfo?
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -268,6 +269,107 @@ class ContainerService: ObservableObject {
         }
         
         return images
+    }
+    
+    // MARK: - System Management
+    
+    func refreshSystemInfo() async {
+        do {
+            let serviceStatus = try await getSystemStatus()
+            let dnsSettings = try await listDNSDomains()
+            let kernelInfo = try await getKernelInfo()
+            
+            systemInfo = SystemInfo(
+                serviceStatus: serviceStatus,
+                dnsSettings: dnsSettings,
+                kernelInfo: kernelInfo
+            )
+        } catch {
+            print("Failed to refresh system info: \(error)")
+        }
+    }
+    
+    func getSystemStatus() async throws -> SystemServiceStatus {
+        do {
+            // Try to run a simple command to check if system is responsive
+            _ = try await executeCommand([containerCommand, "system", "logs", "--last", "1m"])
+            return .running
+        } catch {
+            // If it fails, assume system is stopped or having issues
+            return .stopped
+        }
+    }
+    
+    func startSystem() async throws {
+        _ = try await executeCommand([containerCommand, "system", "start"])
+    }
+    
+    func stopSystem() async throws {
+        _ = try await executeCommand([containerCommand, "system", "stop"])
+    }
+    
+    func restartSystem() async throws {
+        _ = try await executeCommand([containerCommand, "system", "restart"])
+    }
+    
+    func listDNSDomains() async throws -> [DNSDomain] {
+        let output = try await executeCommand([containerCommand, "system", "dns", "list"])
+        return try parseDNSDomains(output)
+    }
+    
+    func createDNSDomain(_ domain: String) async throws {
+        _ = try await executeCommand([containerCommand, "system", "dns", "create", domain])
+    }
+    
+    func deleteDNSDomain(_ domain: String) async throws {
+        _ = try await executeCommand([containerCommand, "system", "dns", "delete", domain])
+    }
+    
+    func setDefaultDNSDomain(_ domain: String) async throws {
+        _ = try await executeCommand([containerCommand, "system", "dns", "default", domain])
+    }
+    
+    func getSystemLogs(timeFilter: String? = nil, follow: Bool = false) async throws -> String {
+        var args = [containerCommand, "system", "logs"]
+        if let timeFilter = timeFilter {
+            args.append(contentsOf: ["--last", timeFilter])
+        }
+        if follow {
+            args.append("--follow")
+        }
+        
+        return try await executeCommand(args)
+    }
+    
+    func getKernelInfo() async throws -> String? {
+        // This might not have a direct query command, so we'll return nil for now
+        // In a real implementation, you might need to check configuration files
+        return nil
+    }
+    
+    private func parseDNSDomains(_ output: String) throws -> [DNSDomain] {
+        let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedOutput.isEmpty else {
+            return []
+        }
+        
+        let lines = trimmedOutput.components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        
+        var domains: [DNSDomain] = []
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            // Check if this line indicates a default domain (marked with *)
+            let isDefault = trimmedLine.hasPrefix("*")
+            let domain = isDefault ? String(trimmedLine.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines) : trimmedLine
+            
+            if !domain.isEmpty {
+                domains.append(DNSDomain(domain: domain, isDefault: isDefault))
+            }
+        }
+        
+        return domains
     }
 }
 

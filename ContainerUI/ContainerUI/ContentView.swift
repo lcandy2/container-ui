@@ -52,14 +52,50 @@ enum ContainerStatus: Hashable {
     }
 }
 
+struct SystemInfo {
+    let serviceStatus: SystemServiceStatus
+    let dnsSettings: [DNSDomain]
+    let kernelInfo: String?
+}
+
+struct DNSDomain: Identifiable, Hashable {
+    let id = UUID()
+    let domain: String
+    let isDefault: Bool
+}
+
+enum SystemServiceStatus: Hashable {
+    case running
+    case stopped
+    case unknown
+    
+    var displayName: String {
+        switch self {
+        case .running: return "Running"
+        case .stopped: return "Stopped"
+        case .unknown: return "Unknown"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .running: return .green
+        case .stopped: return .red
+        case .unknown: return .orange
+        }
+    }
+}
+
 enum AppTab: String, CaseIterable {
     case containers = "Containers"
     case images = "Images"
+    case system = "System"
     
     var systemImage: String {
         switch self {
         case .containers: return "shippingbox"
         case .images: return "disc"
+        case .system: return "gearshape"
         }
     }
 }
@@ -67,6 +103,7 @@ enum AppTab: String, CaseIterable {
 enum SelectedItem: Hashable {
     case container(Container)
     case image(ContainerImage)
+    case system
 }
 
 struct ContentView: View {
@@ -113,13 +150,18 @@ struct ContentView: View {
                             handleContainerAction(action, container)
                         }
                     )
-                } else {
+                } else if selectedTab == .images {
                     ImageListView(
                         images: containerService.images,
                         selectedItem: $selectedItem,
                         onImageAction: { action, image in
                             handleImageAction(action, image)
                         }
+                    )
+                } else {
+                    SystemListView(
+                        selectedItem: $selectedItem,
+                        containerService: containerService
                     )
                 }
             }
@@ -148,12 +190,16 @@ struct ContentView: View {
                         image: image,
                         containerService: containerService
                     )
+                case .system:
+                    SystemInspectorView(
+                        containerService: containerService
+                    )
                 }
             } else {
                 ContentUnavailableView(
                     "Select an Item",
                     systemImage: selectedTab.systemImage,
-                    description: Text("Choose a \(selectedTab.rawValue.lowercased().dropLast()) to see details and actions")
+                    description: Text(selectedTab == .system ? "System management and configuration" : "Choose a \(selectedTab.rawValue.lowercased().dropLast()) to see details and actions")
                 )
             }
         }
@@ -181,6 +227,7 @@ struct ContentView: View {
         Task {
             await containerService.refreshContainers()
             await containerService.refreshImages()
+            await containerService.refreshSystemInfo()
         }
     }
     
@@ -362,6 +409,109 @@ struct ImageListView: View {
                     }
             }
         }
+    }
+}
+
+struct SystemListView: View {
+    @Binding var selectedItem: SelectedItem?
+    @ObservedObject var containerService: ContainerService
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // System Status Card
+            Button(action: {
+                selectedItem = .system
+            }) {
+                SystemStatusCard(systemInfo: containerService.systemInfo)
+            }
+            .buttonStyle(.plain)
+            
+            Spacer()
+        }
+        .padding()
+    }
+}
+
+struct SystemStatusCard: View {
+    let systemInfo: SystemInfo?
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "gearshape.fill")
+                    .font(.title2)
+                    .foregroundColor(.blue)
+                
+                VStack(alignment: .leading) {
+                    Text("Container System")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    if let systemInfo = systemInfo {
+                        HStack {
+                            Circle()
+                                .fill(systemInfo.serviceStatus.color)
+                                .frame(width: 8, height: 8)
+                            Text(systemInfo.serviceStatus.displayName)
+                                .font(.caption)
+                        }
+                    } else {
+                        Text("Loading...")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            if let systemInfo = systemInfo {
+                Divider()
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("DNS Domains:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("\(systemInfo.dnsSettings.count)")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    
+                    if !systemInfo.dnsSettings.isEmpty {
+                        ForEach(systemInfo.dnsSettings.prefix(3)) { domain in
+                            HStack {
+                                if domain.isDefault {
+                                    Image(systemName: "star.fill")
+                                        .font(.caption2)
+                                        .foregroundColor(.yellow)
+                                }
+                                Text(domain.domain)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        
+                        if systemInfo.dnsSettings.count > 3 {
+                            Text("and \(systemInfo.dnsSettings.count - 3) more...")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(NSColor.controlBackgroundColor))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+        )
     }
 }
 
@@ -635,6 +785,155 @@ struct ImageInspectorView: View {
             }
         }
         .navigationTitle("Image Details")
+    }
+}
+
+struct SystemInspectorView: View {
+    @ObservedObject var containerService: ContainerService
+    @State private var showingSystemLogsSheet = false
+    @State private var newDomainName = ""
+    @State private var showingAddDomainAlert = false
+    
+    var body: some View {
+        List {
+            Section("System Status") {
+                if let systemInfo = containerService.systemInfo {
+                    LabeledContent("Service Status") {
+                        HStack {
+                            Circle()
+                                .fill(systemInfo.serviceStatus.color)
+                                .frame(width: 8, height: 8)
+                            Text(systemInfo.serviceStatus.displayName)
+                        }
+                    }
+                } else {
+                    Text("Loading system information...")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Section("System Actions") {
+                Button("Start System") {
+                    Task {
+                        do {
+                            try await containerService.startSystem()
+                            await containerService.refreshSystemInfo()
+                        } catch {
+                            print("Failed to start system: \(error)")
+                        }
+                    }
+                }
+                .disabled(containerService.systemInfo?.serviceStatus == .running)
+                
+                Button("Stop System") {
+                    Task {
+                        do {
+                            try await containerService.stopSystem()
+                            await containerService.refreshSystemInfo()
+                        } catch {
+                            print("Failed to stop system: \(error)")
+                        }
+                    }
+                }
+                .disabled(containerService.systemInfo?.serviceStatus != .running)
+                
+                Button("Restart System") {
+                    Task {
+                        do {
+                            try await containerService.restartSystem()
+                            await containerService.refreshSystemInfo()
+                        } catch {
+                            print("Failed to restart system: \(error)")
+                        }
+                    }
+                }
+            }
+            
+            Section("DNS Management") {
+                if let systemInfo = containerService.systemInfo {
+                    if systemInfo.dnsSettings.isEmpty {
+                        Text("No DNS domains configured")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(systemInfo.dnsSettings) { domain in
+                            HStack {
+                                Text(domain.domain)
+                                
+                                Spacer()
+                                
+                                if domain.isDefault {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                        .font(.caption)
+                                }
+                            }
+                            .contextMenu {
+                                if !domain.isDefault {
+                                    Button("Set as Default") {
+                                        Task {
+                                            do {
+                                                try await containerService.setDefaultDNSDomain(domain.domain)
+                                                await containerService.refreshSystemInfo()
+                                            } catch {
+                                                print("Failed to set default domain: \(error)")
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Button("Delete", role: .destructive) {
+                                    Task {
+                                        do {
+                                            try await containerService.deleteDNSDomain(domain.domain)
+                                            await containerService.refreshSystemInfo()
+                                        } catch {
+                                            print("Failed to delete domain: \(error)")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    Button("Add DNS Domain") {
+                        showingAddDomainAlert = true
+                    }
+                } else {
+                    Text("Loading DNS settings...")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            
+            Section("System Logs") {
+                Button("View System Logs") {
+                    showingSystemLogsSheet = true
+                }
+            }
+        }
+        .navigationTitle("System")
+        .alert("Add DNS Domain", isPresented: $showingAddDomainAlert) {
+            TextField("Domain name", text: $newDomainName)
+            Button("Cancel", role: .cancel) {
+                newDomainName = ""
+            }
+            Button("Add") {
+                Task {
+                    do {
+                        try await containerService.createDNSDomain(newDomainName)
+                        await containerService.refreshSystemInfo()
+                        newDomainName = ""
+                    } catch {
+                        print("Failed to create domain: \(error)")
+                    }
+                }
+            }
+            .disabled(newDomainName.isEmpty)
+        } message: {
+            Text("Enter a DNS domain name to add to the system.")
+        }
+        .sheet(isPresented: $showingSystemLogsSheet) {
+            SystemLogsView(containerService: containerService)
+        }
     }
 }
 
@@ -945,6 +1244,106 @@ struct LogsView: View {
             } catch {
                 await MainActor.run {
                     errorMessage = "Failed to load logs: \(error.localizedDescription)"
+                    isLoading = false
+                }
+            }
+        }
+    }
+}
+
+struct SystemLogsView: View {
+    @ObservedObject var containerService: ContainerService
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var logs = ""
+    @State private var isLoading = false
+    @State private var timeFilter = "5m"
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Time Filter:")
+                    
+                    Picker("Time Filter", selection: $timeFilter) {
+                        Text("5 minutes").tag("5m")
+                        Text("1 hour").tag("1h")
+                        Text("1 day").tag("1d")
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 250)
+                    
+                    Spacer()
+                    
+                    Button("Refresh") {
+                        loadLogs()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding()
+                
+                Divider()
+                
+                if isLoading {
+                    VStack {
+                        ProgressView("Loading system logs...")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text(logs.isEmpty ? "No system logs available" : logs)
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding()
+                        }
+                    }
+                    .background(Color(NSColor.textBackgroundColor))
+                }
+            }
+            .navigationTitle("System Logs")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .frame(minWidth: 700, minHeight: 500)
+        .task {
+            loadLogs()
+        }
+        .onChange(of: timeFilter) { _, _ in
+            loadLogs()
+        }
+        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+    
+    private func loadLogs() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let result = try await containerService.getSystemLogs(timeFilter: timeFilter)
+                
+                await MainActor.run {
+                    logs = result
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to load system logs: \(error.localizedDescription)"
                     isLoading = false
                 }
             }
