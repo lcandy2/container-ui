@@ -66,6 +66,14 @@ class ContainerService: ObservableObject {
     }
     
     private func executeCommand(_ arguments: [String]) async throws -> String {
+        // Check if we can access the container binary
+        let containerPath = containerCommand
+        
+        // For sandboxed apps, we need to check if the container tool is accessible
+        guard FileManager.default.isExecutableFile(atPath: containerPath) || containerPath == "container" else {
+            throw ContainerError.commandFailed("Container CLI tool not found at \(containerPath). Please ensure Apple's container tool is installed and accessible.")
+        }
+        
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             let pipe = Pipe()
@@ -74,10 +82,16 @@ class ContainerService: ObservableObject {
             process.standardOutput = pipe
             process.standardError = errorPipe
             
-            // Use shell to handle PATH resolution and sandbox issues
-            process.executableURL = URL(fileURLWithPath: "/bin/sh")
-            let commandString = arguments.joined(separator: " ")
-            process.arguments = ["-c", commandString]
+            // Try direct execution first
+            if containerPath != "container" && FileManager.default.isExecutableFile(atPath: containerPath) {
+                process.executableURL = URL(fileURLWithPath: containerPath)
+                process.arguments = Array(arguments.dropFirst())
+            } else {
+                // Fallback to shell execution for PATH lookup
+                process.executableURL = URL(fileURLWithPath: "/bin/sh")
+                let commandString = arguments.joined(separator: " ")
+                process.arguments = ["-c", "PATH=/usr/local/bin:/opt/homebrew/bin:$PATH; \(commandString)"]
+            }
             
             process.terminationHandler = { process in
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
@@ -88,7 +102,8 @@ class ContainerService: ObservableObject {
                     continuation.resume(returning: output)
                 } else {
                     let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
-                    continuation.resume(throwing: ContainerError.commandFailed(errorMessage))
+                    let fullError = "Command failed: \(errorMessage)\n\nThis may be due to sandboxing restrictions. For development, consider temporarily disabling App Sandbox in project settings."
+                    continuation.resume(throwing: ContainerError.commandFailed(fullError))
                 }
             }
             
