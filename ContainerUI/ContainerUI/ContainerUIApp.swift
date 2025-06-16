@@ -14,5 +14,20 @@ struct ContainerUIApp: App {
         WindowGroup {
             ContentView()
         }
+        
+        WindowGroup("Logs", id: "universal-logs", for: String.self) { $logSourceId in
+            if let logSourceId = logSourceId {
+                UniversalLogsWindow(logSourceId: logSourceId)
+            } else {
+                ContentUnavailableView(
+                    "No Log Source",
+                    systemImage: "doc.text",
+                    description: Text("Unable to load log source")
+                )
+            }
+        }
+        .windowResizability(.contentSize)
+        .windowStyle(.titleBar)
+        .defaultSize(width: 800, height: 600)
     }
 }

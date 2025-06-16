@@ -169,8 +169,7 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .containers
     @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
-    @State private var showingLogsSheet = false
-    @State private var logsContainer: Container?
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         NavigationSplitView {
@@ -240,8 +239,7 @@ struct ContentView: View {
                 case .container(let container):
                     ContainerInspectorView(
                         container: container,
-                        containerService: containerService,
-                        onShowLogs: { showLogs(for: container) }
+                        containerService: containerService
                     )
                 case .image(let image):
                     ImageInspectorView(
@@ -273,11 +271,6 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingNewContainerSheet) {
             NewContainerView(containerService: containerService)
-        }
-        .sheet(isPresented: $showingLogsSheet) {
-            if let container = logsContainer {
-                LogsView(container: container, containerService: containerService)
-            }
         }
     }
     
@@ -333,11 +326,6 @@ struct ContentView: View {
         }
     }
     
-    private func showLogs(for container: Container) {
-        logsContainer = container
-        showingLogsSheet = true
-    }
-    
     private func handleContainerAction(_ action: String, _ container: Container) {
         switch action {
         case "start":
@@ -347,7 +335,8 @@ struct ContentView: View {
         case "delete":
             deleteContainer(container)
         case "logs":
-            showLogs(for: container)
+            let logSource = containerService.createContainerLogSource(for: container)
+            openWindow(id: "universal-logs", value: logSource.id)
         default:
             break
         }
@@ -696,7 +685,7 @@ struct ImageDetailView: View {
 struct ContainerInspectorView: View {
     let container: Container
     @ObservedObject var containerService: ContainerService
-    let onShowLogs: () -> Void
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         List {
@@ -769,7 +758,13 @@ struct ContainerInspectorView: View {
             
             Section("Debug") {
                 Button("View Logs") {
-                    onShowLogs()
+                    let logSource = containerService.createContainerLogSource(for: container)
+                    openWindow(id: "universal-logs", value: logSource.id)
+                }
+                
+                Button("View Boot Logs") {
+                    let logSource = containerService.createContainerBootLogSource(for: container)
+                    openWindow(id: "universal-logs", value: logSource.id)
                 }
                 
                 Button("Open Terminal") {
@@ -848,9 +843,9 @@ struct ImageInspectorView: View {
 
 struct SystemInspectorView: View {
     @ObservedObject var containerService: ContainerService
-    @State private var showingSystemLogsSheet = false
     @State private var newDomainName = ""
     @State private var showingAddDomainAlert = false
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         List {
@@ -964,7 +959,8 @@ struct SystemInspectorView: View {
             
             Section("System Logs") {
                 Button("View System Logs") {
-                    showingSystemLogsSheet = true
+                    let logSource = containerService.createSystemLogSource()
+                    openWindow(id: "universal-logs", value: logSource.id)
                 }
             }
         }
@@ -989,16 +985,13 @@ struct SystemInspectorView: View {
         } message: {
             Text("Enter a DNS domain name to add to the system.")
         }
-        .sheet(isPresented: $showingSystemLogsSheet) {
-            SystemLogsView(containerService: containerService)
-        }
     }
 }
 
 struct ContainerDetailView: View {
     let container: Container
     @EnvironmentObject private var containerService: ContainerService
-    @State private var showingLogsSheet = false
+    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -1079,7 +1072,8 @@ struct ContainerDetailView: View {
                 .buttonStyle(.bordered)
                 
                 Button("View Logs") {
-                    showingLogsSheet = true
+                    let logSource = containerService.createContainerLogSource(for: container)
+                    openWindow(id: "universal-logs", value: logSource.id)
                 }
                 .buttonStyle(.bordered)
                 
@@ -1099,9 +1093,6 @@ struct ContainerDetailView: View {
             Spacer()
         }
         .padding()
-        .sheet(isPresented: $showingLogsSheet) {
-            LogsView(container: container, containerService: containerService)
-        }
     }
 }
 
@@ -1184,92 +1175,109 @@ struct NewContainerView: View {
     }
 }
 
-struct LogsView: View {
-    let container: Container
-    @ObservedObject var containerService: ContainerService
-    @Environment(\.dismiss) private var dismiss
+
+struct UniversalLogsWindow: View {
+    let logSourceId: String
+    @StateObject private var containerService = ContainerService()
+    @Environment(\.openWindow) private var openWindow
+    
+    private var logSource: LogSource? {
+        // Reconstruct the LogSource from the ID
+        let components = logSourceId.components(separatedBy: "-")
+        guard !components.isEmpty else { return nil }
+        
+        switch components[0] {
+        case "container":
+            guard components.count > 1 else { return nil }
+            let containerID = components.dropFirst().joined(separator: "-")
+            // Find container by ID to create LogSource
+            if let container = containerService.containers.first(where: { $0.containerID == containerID }) {
+                return containerService.createContainerLogSource(for: container)
+            }
+        case "boot":
+            guard components.count > 1 else { return nil }
+            let containerID = components.dropFirst().joined(separator: "-")
+            if let container = containerService.containers.first(where: { $0.containerID == containerID }) {
+                return containerService.createContainerBootLogSource(for: container)
+            }
+        case "system":
+            return containerService.createSystemLogSource()
+        default:
+            break
+        }
+        return nil
+    }
     
     @State private var logs = ""
     @State private var isLoading = false
-    @State private var showBootLogs = false
-    @State private var lineLimit = 100
     @State private var errorMessage: String?
+    @State private var searchText = ""
+    @State private var timeFilter = "5m"
+    @State private var lineLimit = 100
+    @State private var isStreaming = false
+    @State private var showLineNumbers = false
+    @State private var wordWrap = true
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                HStack {
-                    Toggle("Boot Logs", isOn: $showBootLogs)
+        NavigationStack {
+            if let logSource = logSource {
+                VStack(spacing: 0) {
+                    // Toolbar
+                    LogsToolbar(
+                        logSource: logSource,
+                        timeFilter: $timeFilter,
+                        lineLimit: $lineLimit,
+                        isStreaming: $isStreaming,
+                        showLineNumbers: $showLineNumbers,
+                        wordWrap: $wordWrap,
+                        onRefresh: { Task { await loadLogs() } },
+                        onExport: { exportLogs() }
+                    )
                     
-                    Spacer()
+                    Divider()
                     
-                    if !showBootLogs {
-                        Picker("Lines", selection: $lineLimit) {
-                            Text("50").tag(50)
-                            Text("100").tag(100)
-                            Text("500").tag(500)
-                            Text("All").tag(-1)
+                    // Main Content
+                    if isLoading {
+                        VStack {
+                            ProgressView("Loading \(logSource.type.displayName.lowercased())...")
+                                .controlSize(.large)
+                            Spacer()
                         }
-                        .pickerStyle(.segmented)
-                        .frame(width: 200)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        LogsContentView(
+                            logs: filteredLogs,
+                            showLineNumbers: showLineNumbers,
+                            wordWrap: wordWrap
+                        )
                     }
                     
-                    Button("Refresh") {
-                        loadLogs()
-                    }
-                    .buttonStyle(.bordered)
+                    // Status Bar
+                    LogsStatusBar(
+                        logSource: logSource,
+                        lineCount: filteredLogs.components(separatedBy: .newlines).count,
+                        isStreaming: isStreaming,
+                        lastUpdated: Date()
+                    )
                 }
-                .padding()
-                
-                Divider()
-                
-                if isLoading {
-                    VStack {
-                        ProgressView("Loading logs...")
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        ScrollViewReader { proxy in
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(logs.isEmpty ? "No logs available" : logs)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .textSelection(.enabled)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .padding()
-                                    .id("bottom")
-                            }
-                            .onAppear {
-                                proxy.scrollTo("bottom", anchor: .bottom)
-                            }
-                            .onChange(of: logs) { _, _ in
-                                proxy.scrollTo("bottom", anchor: .bottom)
-                            }
-                        }
-                    }
-                    .background(Color(NSColor.textBackgroundColor))
+                .navigationTitle(logSource.title)
+                .searchable(text: $searchText, prompt: "Search logs...")
+                .task {
+                    await containerService.refreshContainers() // Ensure containers are loaded
+                    await loadLogs()
                 }
-            }
-            .navigationTitle("Logs - \(container.name)")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
+                .onChange(of: timeFilter) { _, _ in
+                    Task { await loadLogs() }
                 }
-            }
-        }
-        .frame(minWidth: 600, minHeight: 400)
-        .task {
-            loadLogs()
-        }
-        .onChange(of: showBootLogs) { _, _ in
-            loadLogs()
-        }
-        .onChange(of: lineLimit) { _, _ in
-            if !showBootLogs {
-                loadLogs()
+                .onChange(of: lineLimit) { _, _ in
+                    Task { await loadLogs() }
+                }
+            } else {
+                ContentUnavailableView(
+                    "Invalid Log Source",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text("Unable to load log source with ID: \(logSourceId)")
+                )
             }
         }
         .alert("Error", isPresented: .constant(errorMessage != nil)) {
@@ -1281,131 +1289,221 @@ struct LogsView: View {
         }
     }
     
-    private func loadLogs() {
+    private var filteredLogs: String {
+        guard !searchText.isEmpty else { return logs }
+        
+        let lines = logs.components(separatedBy: .newlines)
+        let filteredLines = lines.filter { line in
+            line.localizedCaseInsensitiveContains(searchText)
+        }
+        return filteredLines.joined(separator: "\n")
+    }
+    
+    private func loadLogs() async {
+        guard let logSource = logSource else {
+            await MainActor.run {
+                errorMessage = "Invalid log source"
+                isLoading = false
+            }
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         
-        Task {
-            do {
-                let result: String
-                if showBootLogs {
-                    result = try await containerService.getContainerBootLogs(container.containerID)
-                } else {
-                    let lines = lineLimit == -1 ? nil : lineLimit
-                    result = try await containerService.getContainerLogs(container.containerID, lines: lines)
-                }
-                
-                await MainActor.run {
-                    logs = result
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load logs: \(error.localizedDescription)"
-                    isLoading = false
-                }
+        do {
+            let timeFilterValue = logSource.availableFilters.contains(.timeRange) ? timeFilter : nil
+            let lineValue: Int? = if case .containerBoot = logSource.type { nil } else { lineLimit }
+            
+            let result = try await containerService.fetchLogs(
+                for: logSource,
+                timeFilter: timeFilterValue,
+                lines: lineValue
+            )
+            
+            await MainActor.run {
+                logs = result
+                isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = "Failed to load logs: \(error.localizedDescription)"
+                isLoading = false
             }
         }
+    }
+    
+    private func exportLogs() {
+        // TODO: Implement export functionality
+        print("Export logs for \(logSourceId)")
     }
 }
 
-struct SystemLogsView: View {
-    @ObservedObject var containerService: ContainerService
-    @Environment(\.dismiss) private var dismiss
-    
-    @State private var logs = ""
-    @State private var isLoading = false
-    @State private var timeFilter = "5m"
-    @State private var errorMessage: String?
+struct LogsToolbar: View {
+    let logSource: LogSource
+    @Binding var timeFilter: String
+    @Binding var lineLimit: Int
+    @Binding var isStreaming: Bool
+    @Binding var showLineNumbers: Bool
+    @Binding var wordWrap: Bool
+    let onRefresh: () -> Void
+    let onExport: () -> Void
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                HStack {
-                    Text("Time Filter:")
-                    
-                    Picker("Time Filter", selection: $timeFilter) {
-                        Text("5 minutes").tag("5m")
-                        Text("1 hour").tag("1h")
-                        Text("1 day").tag("1d")
-                    }
-                    .pickerStyle(.segmented)
-                    .frame(width: 250)
-                    
-                    Spacer()
-                    
-                    Button("Refresh") {
-                        loadLogs()
-                    }
-                    .buttonStyle(.bordered)
+        HStack(spacing: 12) {
+            // Time Filter (if supported)
+            if logSource.availableFilters.contains(.timeRange) {
+                Text("Time:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                Picker("Time Filter", selection: $timeFilter) {
+                    Text("5m").tag("5m")
+                    Text("1h").tag("1h")
+                    Text("1d").tag("1d")
                 }
-                .padding()
+                .pickerStyle(.segmented)
+                .frame(width: 150)
+            }
+            
+            // Line Limit (for container logs)
+            if case .container = logSource.type {
+                Text("Lines:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                
+                Picker("Lines", selection: $lineLimit) {
+                    Text("50").tag(50)
+                    Text("100").tag(100)
+                    Text("500").tag(500)
+                    Text("All").tag(-1)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+            }
+            
+            Spacer()
+            
+            // View Options
+            Menu {
+                Toggle("Line Numbers", isOn: $showLineNumbers)
+                Toggle("Word Wrap", isOn: $wordWrap)
                 
                 Divider()
                 
-                if isLoading {
-                    VStack {
-                        ProgressView("Loading system logs...")
-                        Spacer()
+                Button("Export Logs", action: onExport)
+                    .keyboardShortcut("e", modifiers: [.command])
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .menuStyle(.borderlessButton)
+            
+            // Refresh Button
+            Button(action: onRefresh) {
+                Image(systemName: "arrow.clockwise")
+            }
+            .keyboardShortcut("r", modifiers: [.command])
+            
+            // Streaming Toggle (if supported)
+            if logSource.supportsRealTime {
+                Toggle("Live", isOn: $isStreaming)
+                    .toggleStyle(.button)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.regularMaterial)
+    }
+}
+
+struct LogsContentView: View {
+    let logs: String
+    let showLineNumbers: Bool
+    let wordWrap: Bool
+    
+    var body: some View {
+        ScrollView([.horizontal, .vertical]) {
+            HStack(alignment: .top, spacing: 0) {
+                // Line Numbers
+                if showLineNumbers {
+                    VStack(alignment: .trailing, spacing: 0) {
+                        ForEach(Array(logs.components(separatedBy: .newlines).enumerated()), id: \.offset) { index, _ in
+                            Text("\(index + 1)")
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.tertiary)
+                                .frame(minWidth: 40, alignment: .trailing)
+                                .padding(.trailing, 8)
+                        }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(logs.isEmpty ? "No system logs available" : logs)
+                    .background(.quaternary.opacity(0.3))
+                }
+                
+                // Log Content
+                VStack(alignment: .leading, spacing: 0) {
+                    if wordWrap {
+                        Text(logs.isEmpty ? "No logs available" : logs)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        ForEach(Array(logs.components(separatedBy: .newlines).enumerated()), id: \.offset) { _, line in
+                            Text(line.isEmpty ? " " : line)
                                 .font(.system(.caption, design: .monospaced))
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
                         }
                     }
-                    .background(Color(NSColor.textBackgroundColor))
                 }
-            }
-            .navigationTitle("System Logs")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        dismiss()
-                    }
-                }
+                .padding()
             }
         }
-        .frame(minWidth: 700, minHeight: 500)
-        .task {
-            loadLogs()
-        }
-        .onChange(of: timeFilter) { _, _ in
-            loadLogs()
-        }
-        .alert("Error", isPresented: .constant(errorMessage != nil)) {
-            Button("OK") {
-                errorMessage = nil
-            }
-        } message: {
-            Text(errorMessage ?? "")
-        }
+        .background(Color(NSColor.textBackgroundColor))
     }
+}
+
+struct LogsStatusBar: View {
+    let logSource: LogSource
+    let lineCount: Int
+    let isStreaming: Bool
+    let lastUpdated: Date
     
-    private func loadLogs() {
-        isLoading = true
-        errorMessage = nil
-        
-        Task {
-            do {
-                let result = try await containerService.getSystemLogs(timeFilter: timeFilter)
+    var body: some View {
+        HStack {
+            HStack(spacing: 4) {
+                Image(systemName: logSource.type.systemImage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(logSource.type.displayName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            HStack(spacing: 16) {
+                Text("\(lineCount) lines")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 
-                await MainActor.run {
-                    logs = result
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "Failed to load system logs: \(error.localizedDescription)"
-                    isLoading = false
+                if isStreaming {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 6, height: 6)
+                        Text("Live")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Updated \(lastUpdated, style: .relative) ago")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
+        .padding(.horizontal)
+        .padding(.vertical, 4)
+        .background(.regularMaterial)
     }
 }
 

@@ -371,6 +371,52 @@ class ContainerService: ObservableObject {
         
         return domains
     }
+    
+    // MARK: - Log Sources
+    
+    func createContainerLogSource(for container: Container) -> LogSource {
+        LogSource(
+            id: "container-\(container.containerID)",
+            title: "Container: \(container.name)",
+            type: .container(containerID: container.containerID),
+            supportsRealTime: true,
+            availableFilters: [.timeRange, .textSearch]
+        )
+    }
+    
+    func createContainerBootLogSource(for container: Container) -> LogSource {
+        LogSource(
+            id: "boot-\(container.containerID)",
+            title: "Boot Logs: \(container.name)",
+            type: .containerBoot(containerID: container.containerID),
+            supportsRealTime: false,
+            availableFilters: [.textSearch]
+        )
+    }
+    
+    func createSystemLogSource() -> LogSource {
+        LogSource(
+            id: "system",
+            title: "System Logs",
+            type: .system,
+            supportsRealTime: false,
+            availableFilters: [.timeRange, .textSearch]
+        )
+    }
+    
+    func fetchLogs(for logSource: LogSource, timeFilter: String? = nil, lines: Int? = nil) async throws -> String {
+        switch logSource.type {
+        case .container(let containerID):
+            return try await getContainerLogs(containerID, lines: lines)
+        case .containerBoot(let containerID):
+            return try await getContainerBootLogs(containerID)
+        case .system:
+            return try await getSystemLogs(timeFilter: timeFilter)
+        case .builder, .registry:
+            // Future implementation
+            return "Logs not yet implemented for \(logSource.type.displayName)"
+        }
+    }
 }
 
 enum ContainerError: LocalizedError {
