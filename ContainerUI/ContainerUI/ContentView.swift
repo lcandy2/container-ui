@@ -41,6 +41,7 @@ enum ContainerStatus: Hashable {
 struct ContentView: View {
     @StateObject private var containerService = ContainerService()
     @State private var selectedContainer: Container?
+    @State private var showingNewContainerSheet = false
     
     var body: some View {
         NavigationSplitView {
@@ -100,7 +101,7 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button("New Container") {
-                    // TODO: Show new container sheet
+                    showingNewContainerSheet = true
                 }
                 .buttonStyle(.borderedProminent)
             }
@@ -121,6 +122,9 @@ struct ContentView: View {
             }
         } message: {
             Text(containerService.errorMessage ?? "")
+        }
+        .sheet(isPresented: $showingNewContainerSheet) {
+            NewContainerView(containerService: containerService)
         }
     }
     
@@ -298,6 +302,85 @@ struct ContainerDetailView: View {
             Spacer()
         }
         .padding()
+    }
+}
+
+struct NewContainerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var containerService: ContainerService
+    
+    @State private var imageName = "alpine:latest"
+    @State private var containerName = ""
+    @State private var isCreating = false
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Container Configuration") {
+                    TextField("Image", text: $imageName)
+                        .textFieldStyle(.roundedBorder)
+                    
+                    TextField("Container Name (optional)", text: $containerName)
+                        .textFieldStyle(.roundedBorder)
+                }
+                
+                Section("Common Images") {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 150))], spacing: 12) {
+                        ForEach(commonImages, id: \.self) { image in
+                            Button(image) {
+                                imageName = image
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("New Container")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Create") {
+                        createContainer()
+                    }
+                    .disabled(imageName.isEmpty || isCreating)
+                }
+            }
+        }
+        .frame(minWidth: 500, minHeight: 400)
+    }
+    
+    private var commonImages: [String] {
+        [
+            "alpine:latest",
+            "ubuntu:latest",
+            "nginx:alpine",
+            "node:alpine",
+            "python:alpine",
+            "redis:alpine",
+            "postgres:15"
+        ]
+    }
+    
+    private func createContainer() {
+        isCreating = true
+        Task {
+            do {
+                let name = containerName.isEmpty ? nil : containerName
+                try await containerService.createAndRunContainer(image: imageName, name: name)
+                await containerService.refreshContainers()
+                await MainActor.run {
+                    dismiss()
+                }
+            } catch {
+                print("Failed to create container: \(error)")
+            }
+            isCreating = false
+        }
     }
 }
 

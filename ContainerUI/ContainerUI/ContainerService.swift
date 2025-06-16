@@ -36,14 +36,31 @@ class ContainerService: ObservableObject {
         errorMessage = nil
         
         do {
+            // Ensure container system is started
+            try await ensureContainerSystemStarted()
+            
             let output = try await executeCommand([containerCommand, "list"])
             containers = try parseContainerList(output)
         } catch {
-            errorMessage = "Failed to load containers: \(error.localizedDescription)\n\nNote: This app requires sandboxing to be disabled to execute the container CLI. Please disable App Sandbox in the project settings or run from Xcode."
+            errorMessage = "Failed to load containers: \(error.localizedDescription)"
             print("Container list error: \(error)")
         }
         
         isLoading = false
+    }
+    
+    private func ensureContainerSystemStarted() async throws {
+        // Check if system is already running by trying a simple command
+        do {
+            _ = try await executeCommand([containerCommand, "list"])
+        } catch {
+            // If list fails, try starting the system
+            print("Container system not running, attempting to start...")
+            _ = try await executeCommand([containerCommand, "system", "start"])
+            
+            // Wait a moment for system to initialize
+            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+        }
     }
     
     func startContainer(_ containerName: String) async throws {
@@ -55,7 +72,17 @@ class ContainerService: ObservableObject {
     }
     
     func deleteContainer(_ containerName: String) async throws {
-        _ = try await executeCommand([containerCommand, "rm", containerName])
+        _ = try await executeCommand([containerCommand, "delete", containerName])
+    }
+    
+    func createAndRunContainer(image: String, name: String? = nil) async throws {
+        var args = [containerCommand, "run", "-d"]
+        if let name = name {
+            args.append(contentsOf: ["--name", name])
+        }
+        args.append(image)
+        
+        _ = try await executeCommand(args)
     }
     
     func openTerminal(for containerName: String) async throws {
@@ -116,37 +143,48 @@ class ContainerService: ObservableObject {
     }
     
     private func parseContainerList(_ output: String) throws -> [Container] {
-        guard !output.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedOutput.isEmpty else {
             return []
         }
         
-        let lines = output.components(separatedBy: .newlines)
+        let lines = trimmedOutput.components(separatedBy: .newlines)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        
+        // Skip header line if present
+        let dataLines = lines.count > 1 && lines[0].contains("ID") ? Array(lines.dropFirst()) : lines
         
         var containers: [Container] = []
         
-        for line in lines {
-            let components = line.components(separatedBy: .whitespaces)
-                .filter { !$0.isEmpty }
+        for line in dataLines {
+            // Split by multiple spaces to handle the column format properly
+            let components = line.split(separator: " ", omittingEmptySubsequences: true)
+                .map { String($0) }
             
-            if components.count >= 3 {
-                let name = components[0]
+            // Expected format: ID  IMAGE  OS  ARCH  STATE  ADDR
+            if components.count >= 5 {
+                let id = components[0]
                 let image = components[1]
-                let statusString = components[2]
+                let stateString = components[4]
                 
                 let status: ContainerStatus
-                switch statusString.lowercased() {
+                switch stateString.lowercased() {
                 case "running":
                     status = .running
-                case "stopped":
+                case "stopped", "stop":
                     status = .stopped
-                default:
+                case "exited", "exit":
                     status = .exited
+                default:
+                    status = .stopped
                 }
                 
+                // Clean up image name (remove registry prefix for display)
+                let displayImage = image.components(separatedBy: "/").last ?? image
+                
                 let container = Container(
-                    name: name,
-                    image: image,
+                    name: id,
+                    image: displayImage,
                     status: status,
                     created: Date().addingTimeInterval(-Double.random(in: 0...86400))
                 )
