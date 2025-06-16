@@ -84,3 +84,9 @@ fastlane/test_output
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# AI Helpers
+buildServer.json
+CLAUDE.md
+.claude
+.cursor
