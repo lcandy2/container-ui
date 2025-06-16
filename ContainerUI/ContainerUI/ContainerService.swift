@@ -12,6 +12,7 @@ internal import Combine
 @MainActor
 class ContainerService: ObservableObject {
     @Published var containers: [Container] = []
+    @Published var images: [ContainerImage] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     
@@ -49,6 +50,15 @@ class ContainerService: ObservableObject {
         isLoading = false
     }
     
+    func refreshImages() async {
+        do {
+            let output = try await executeCommand([containerCommand, "images", "list"])
+            images = try parseImageList(output)
+        } catch {
+            print("Image list error: \(error)")
+        }
+    }
+    
     private func ensureContainerSystemStarted() async throws {
         // Check if system is already running by trying a simple command
         do {
@@ -73,6 +83,10 @@ class ContainerService: ObservableObject {
     
     func deleteContainer(_ containerName: String) async throws {
         _ = try await executeCommand([containerCommand, "delete", containerName])
+    }
+    
+    func deleteImage(_ imageName: String) async throws {
+        _ = try await executeCommand([containerCommand, "images", "delete", imageName])
     }
     
     func createAndRunContainer(image: String, name: String? = nil) async throws {
@@ -193,6 +207,43 @@ class ContainerService: ObservableObject {
         }
         
         return containers
+    }
+    
+    private func parseImageList(_ output: String) throws -> [ContainerImage] {
+        let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedOutput.isEmpty else {
+            return []
+        }
+        
+        let lines = trimmedOutput.components(separatedBy: .newlines)
+            .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        
+        // Skip header line if present
+        let dataLines = lines.count > 1 && lines[0].contains("NAME") ? Array(lines.dropFirst()) : lines
+        
+        var images: [ContainerImage] = []
+        
+        for line in dataLines {
+            // Split by multiple spaces to handle the column format properly
+            let components = line.split(separator: " ", omittingEmptySubsequences: true)
+                .map { String($0) }
+            
+            // Expected format: NAME  TAG  DIGEST
+            if components.count >= 3 {
+                let name = components[0]
+                let tag = components[1]
+                let digest = components[2]
+                
+                let image = ContainerImage(
+                    name: name,
+                    tag: tag,
+                    digest: digest
+                )
+                images.append(image)
+            }
+        }
+        
+        return images
     }
 }
 

@@ -16,6 +16,17 @@ struct Container: Identifiable, Hashable {
     let created: Date
 }
 
+struct ContainerImage: Identifiable, Hashable {
+    let id = UUID()
+    let name: String
+    let tag: String
+    let digest: String
+    
+    var displayName: String {
+        return "\(name):\(tag)"
+    }
+}
+
 enum ContainerStatus: Hashable {
     case running
     case stopped
@@ -38,35 +49,43 @@ enum ContainerStatus: Hashable {
     }
 }
 
+enum SidebarItem: Hashable {
+    case container(Container)
+    case image(ContainerImage)
+}
+
 struct ContentView: View {
     @StateObject private var containerService = ContainerService()
     @State private var selectedContainer: Container?
+    @State private var selectedImage: ContainerImage?
+    @State private var selectedItem: SidebarItem?
     @State private var showingNewContainerSheet = false
     
     var body: some View {
         NavigationSplitView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Containers")
+                    Text("Container Manager")
                         .font(.title2)
                         .fontWeight(.semibold)
                     
                     Spacer()
                     
                     Button("Refresh") {
-                        refreshContainers()
+                        refreshAll()
                     }
                     .buttonStyle(.bordered)
                 }
                 .padding(.horizontal)
+                .padding(.vertical, 8)
                 
-                if containerService.containers.isEmpty && !containerService.isLoading {
+                if containerService.containers.isEmpty && containerService.images.isEmpty && !containerService.isLoading {
                     VStack(spacing: 16) {
                         Image(systemName: "shippingbox")
                             .font(.system(size: 48))
                             .foregroundStyle(.secondary)
                         
-                        Text("No containers found")
+                        Text("No containers or images found")
                             .font(.title2)
                             .foregroundStyle(.secondary)
                         
@@ -81,40 +100,80 @@ struct ContentView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    List(containerService.containers, selection: $selectedContainer) { container in
-                        ContainerRow(container: container)
-                            .tag(container)
-                            .contextMenu {
-                                Button("Start") {
-                                    startContainer(container)
-                                }
-                                .disabled(container.status == .running)
-                                
-                                Button("Stop") {
-                                    stopContainer(container)
-                                }
-                                .disabled(container.status != .running)
-                                
-                                Divider()
-                                
-                                Button("Delete", role: .destructive) {
-                                    deleteContainer(container)
+                    List(selection: $selectedItem) {
+                        Section("Containers") {
+                            if containerService.containers.isEmpty {
+                                Text("No containers")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            } else {
+                                ForEach(containerService.containers) { container in
+                                    ContainerRow(container: container)
+                                        .tag(SidebarItem.container(container))
+                                        .contextMenu {
+                                            Button("Start") {
+                                                startContainer(container)
+                                            }
+                                            .disabled(container.status == .running)
+                                            
+                                            Button("Stop") {
+                                                stopContainer(container)
+                                            }
+                                            .disabled(container.status != .running)
+                                            
+                                            Divider()
+                                            
+                                            Button("Delete", role: .destructive) {
+                                                deleteContainer(container)
+                                            }
+                                        }
                                 }
                             }
+                        }
+                        
+                        Section("Images") {
+                            if containerService.images.isEmpty {
+                                Text("No images")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            } else {
+                                ForEach(containerService.images) { image in
+                                    ImageRow(image: image)
+                                        .tag(SidebarItem.image(image))
+                                        .contextMenu {
+                                            Button("Create Container") {
+                                                // TODO: Create container from image
+                                            }
+                                            
+                                            Divider()
+                                            
+                                            Button("Delete", role: .destructive) {
+                                                deleteImage(image)
+                                            }
+                                        }
+                                }
+                            }
+                        }
                     }
                     .listStyle(.sidebar)
                 }
             }
         } detail: {
-            if let container = selectedContainer {
-                ContainerDetailView(container: container)
-                    .environmentObject(containerService)
+            if let selectedItem = selectedItem {
+                switch selectedItem {
+                case .container(let container):
+                    ContainerDetailView(container: container)
+                        .environmentObject(containerService)
+                case .image(let image):
+                    ImageDetailView(image: image)
+                        .environmentObject(containerService)
+                }
             } else {
                 VStack {
                     Image(systemName: "shippingbox")
                         .font(.system(size: 64))
                         .foregroundStyle(.secondary)
-                    Text("Select a container")
+                    Text("Select a container or image")
                         .font(.title2)
                         .foregroundStyle(.secondary)
                 }
@@ -130,7 +189,7 @@ struct ContentView: View {
             }
         }
         .task {
-            await containerService.refreshContainers()
+            await refreshAll()
         }
         .overlay {
             if containerService.isLoading {
@@ -151,9 +210,10 @@ struct ContentView: View {
         }
     }
     
-    private func refreshContainers() {
+    private func refreshAll() {
         Task {
             await containerService.refreshContainers()
+            await containerService.refreshImages()
         }
     }
     
@@ -189,6 +249,17 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func deleteImage(_ image: ContainerImage) {
+        Task {
+            do {
+                try await containerService.deleteImage("\(image.name):\(image.tag)")
+                await containerService.refreshImages()
+            } catch {
+                print("Failed to delete image: \(error)")
+            }
+        }
+    }
 }
 
 struct ContainerRow: View {
@@ -220,6 +291,98 @@ struct ContainerRow: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 2)
+    }
+}
+
+struct ImageRow: View {
+    let image: ContainerImage
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(image.displayName)
+                    .font(.headline)
+                
+                Spacer()
+                
+                Text("Image")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.2))
+                    .foregroundColor(.blue)
+                    .clipShape(Capsule())
+            }
+            
+            Text(image.digest.prefix(12))
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+struct ImageDetailView: View {
+    let image: ContainerImage
+    @EnvironmentObject private var containerService: ContainerService
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(image.displayName)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text(image.digest)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing) {
+                    Text("Image")
+                        .font(.title2)
+                        .foregroundColor(.blue)
+                        .fontWeight(.semibold)
+                }
+            }
+            
+            Divider()
+            
+            HStack(spacing: 12) {
+                Button("Create Container") {
+                    Task {
+                        do {
+                            try await containerService.createAndRunContainer(image: image.displayName)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to create container: \(error)")
+                        }
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                
+                Spacer()
+                
+                Button("Delete", role: .destructive) {
+                    Task {
+                        do {
+                            try await containerService.deleteImage(image.displayName)
+                            await containerService.refreshImages()
+                        } catch {
+                            print("Failed to delete image: \(error)")
+                        }
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+            
+            Spacer()
+        }
+        .padding()
     }
 }
 
