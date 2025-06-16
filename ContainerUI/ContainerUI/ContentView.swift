@@ -86,20 +86,16 @@ struct ContentView: View {
             .navigationTitle("Container UI")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
             .toolbar {
-                ToolbarItem(placement: .bottomBar) {
-                    HStack {
-                        Button("Refresh") {
-                            refreshAll()
-                        }
-                        .buttonStyle(.bordered)
-                        
-                        Spacer()
-                        
-                        Button("New Container") {
-                            showingNewContainerSheet = true
-                        }
-                        .buttonStyle(.borderedProminent)
+                ToolbarItemGroup(placement: .automatic) {
+                    Button("Refresh") {
+                        refreshAll()
                     }
+                    .buttonStyle(.bordered)
+                    
+                    Button("New Container") {
+                        showingNewContainerSheet = true
+                    }
+                    .buttonStyle(.borderedProminent)
                 }
             }
         } content: {
