@@ -86,6 +86,64 @@ enum SystemServiceStatus: Hashable {
     }
 }
 
+enum LogType: Hashable {
+    case container(containerID: String)
+    case containerBoot(containerID: String)
+    case system
+    case builder
+    case registry
+    
+    var displayName: String {
+        switch self {
+        case .container: return "Container Logs"
+        case .containerBoot: return "Boot Logs"
+        case .system: return "System Logs"
+        case .builder: return "Builder Logs"
+        case .registry: return "Registry Logs"
+        }
+    }
+    
+    var systemImage: String {
+        switch self {
+        case .container: return "doc.text"
+        case .containerBoot: return "power"
+        case .system: return "gearshape"
+        case .builder: return "hammer"
+        case .registry: return "server.rack"
+        }
+    }
+}
+
+enum LogFilter: String, CaseIterable {
+    case timeRange = "Time Range"
+    case textSearch = "Text Search"
+    case logLevel = "Log Level"
+    
+    var systemImage: String {
+        switch self {
+        case .timeRange: return "clock"
+        case .textSearch: return "magnifyingglass"
+        case .logLevel: return "slider.horizontal.3"
+        }
+    }
+}
+
+struct LogSource: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let type: LogType
+    let supportsRealTime: Bool
+    let availableFilters: [LogFilter]
+    
+    static func == (lhs: LogSource, rhs: LogSource) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+}
+
 enum AppTab: String, CaseIterable {
     case containers = "Containers"
     case images = "Images"
