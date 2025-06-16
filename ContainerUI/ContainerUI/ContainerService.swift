@@ -186,7 +186,7 @@ class ContainerService: ObservableObject {
                     name: id,
                     image: displayImage,
                     status: status,
-                    created: Date().addingTimeInterval(-Double.random(in: 0...86400))
+                    created: Date()
                 )
                 containers.append(container)
             }

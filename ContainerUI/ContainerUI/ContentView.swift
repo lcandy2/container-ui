@@ -60,27 +60,50 @@ struct ContentView: View {
                 }
                 .padding(.horizontal)
                 
-                List(containerService.containers, selection: $selectedContainer) { container in
-                    ContainerRow(container: container)
-                        .contextMenu {
-                            Button("Start") {
-                                startContainer(container)
-                            }
-                            .disabled(container.status == .running)
-                            
-                            Button("Stop") {
-                                stopContainer(container)
-                            }
-                            .disabled(container.status != .running)
-                            
-                            Divider()
-                            
-                            Button("Delete", role: .destructive) {
-                                deleteContainer(container)
-                            }
+                if containerService.containers.isEmpty && !containerService.isLoading {
+                    VStack(spacing: 16) {
+                        Image(systemName: "shippingbox")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.secondary)
+                        
+                        Text("No containers found")
+                            .font(.title2)
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Create a new container to get started")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                        
+                        Button("New Container") {
+                            showingNewContainerSheet = true
                         }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    List(containerService.containers, selection: $selectedContainer) { container in
+                        ContainerRow(container: container)
+                            .tag(container)
+                            .contextMenu {
+                                Button("Start") {
+                                    startContainer(container)
+                                }
+                                .disabled(container.status == .running)
+                                
+                                Button("Stop") {
+                                    stopContainer(container)
+                                }
+                                .disabled(container.status != .running)
+                                
+                                Divider()
+                                
+                                Button("Delete", role: .destructive) {
+                                    deleteContainer(container)
+                                }
+                            }
+                    }
+                    .listStyle(.sidebar)
                 }
-                .listStyle(.sidebar)
             }
         } detail: {
             if let container = selectedContainer {
