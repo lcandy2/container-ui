@@ -13,7 +13,6 @@ struct Container: Identifiable, Hashable {
     let name: String
     let image: String
     let status: ContainerStatus
-    let created: Date
 }
 
 struct ContainerImage: Identifiable, Hashable {
@@ -60,6 +59,8 @@ struct ContentView: View {
     @State private var selectedImage: ContainerImage?
     @State private var selectedItem: SidebarItem?
     @State private var showingNewContainerSheet = false
+    @State private var showingLogsSheet = false
+    @State private var logsContainer: Container?
     
     var body: some View {
         NavigationSplitView {
@@ -120,6 +121,10 @@ struct ContentView: View {
                                                 stopContainer(container)
                                             }
                                             .disabled(container.status != .running)
+                                            
+                                            Button("View Logs") {
+                                                showLogs(for: container)
+                                            }
                                             
                                             Divider()
                                             
@@ -208,6 +213,11 @@ struct ContentView: View {
         .sheet(isPresented: $showingNewContainerSheet) {
             NewContainerView(containerService: containerService)
         }
+        .sheet(isPresented: $showingLogsSheet) {
+            if let container = logsContainer {
+                LogsView(container: container, containerService: containerService)
+            }
+        }
     }
     
     private func refreshAll() {
@@ -260,6 +270,11 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func showLogs(for container: Container) {
+        logsContainer = container
+        showingLogsSheet = true
+    }
 }
 
 struct ContainerRow: View {
@@ -285,10 +300,6 @@ struct ContainerRow: View {
             Text(container.image)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            
-            Text("Created \(container.created, style: .relative)")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
         }
         .padding(.vertical, 2)
     }
@@ -389,6 +400,7 @@ struct ImageDetailView: View {
 struct ContainerDetailView: View {
     let container: Container
     @EnvironmentObject private var containerService: ContainerService
+    @State private var showingLogsSheet = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -410,10 +422,6 @@ struct ContainerDetailView: View {
                         .font(.title2)
                         .foregroundColor(container.status.color)
                         .fontWeight(.semibold)
-                    
-                    Text("Created \(container.created, style: .relative)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
             
@@ -472,6 +480,11 @@ struct ContainerDetailView: View {
                 }
                 .buttonStyle(.bordered)
                 
+                Button("View Logs") {
+                    showingLogsSheet = true
+                }
+                .buttonStyle(.bordered)
+                
                 Button("Delete", role: .destructive) {
                     Task {
                         do {
@@ -488,6 +501,9 @@ struct ContainerDetailView: View {
             Spacer()
         }
         .padding()
+        .sheet(isPresented: $showingLogsSheet) {
+            LogsView(container: container, containerService: containerService)
+        }
     }
 }
 
@@ -566,6 +582,131 @@ struct NewContainerView: View {
                 print("Failed to create container: \(error)")
             }
             isCreating = false
+        }
+    }
+}
+
+struct LogsView: View {
+    let container: Container
+    @ObservedObject var containerService: ContainerService
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var logs = ""
+    @State private var isLoading = false
+    @State private var showBootLogs = false
+    @State private var lineLimit = 100
+    @State private var errorMessage: String?
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                HStack {
+                    Toggle("Boot Logs", isOn: $showBootLogs)
+                    
+                    Spacer()
+                    
+                    if !showBootLogs {
+                        Picker("Lines", selection: $lineLimit) {
+                            Text("50").tag(50)
+                            Text("100").tag(100)
+                            Text("500").tag(500)
+                            Text("All").tag(-1)
+                        }
+                        .pickerStyle(.segmented)
+                        .frame(width: 200)
+                    }
+                    
+                    Button("Refresh") {
+                        loadLogs()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding()
+                
+                Divider()
+                
+                if isLoading {
+                    VStack {
+                        ProgressView("Loading logs...")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        ScrollViewReader { proxy in
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(logs.isEmpty ? "No logs available" : logs)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding()
+                                    .id("bottom")
+                            }
+                            .onAppear {
+                                proxy.scrollTo("bottom", anchor: .bottom)
+                            }
+                            .onChange(of: logs) { _, _ in
+                                proxy.scrollTo("bottom", anchor: .bottom)
+                            }
+                        }
+                    }
+                    .background(Color(NSColor.textBackgroundColor))
+                }
+            }
+            .navigationTitle("Logs - \(container.name)")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .frame(minWidth: 600, minHeight: 400)
+        .task {
+            loadLogs()
+        }
+        .onChange(of: showBootLogs) { _, _ in
+            loadLogs()
+        }
+        .onChange(of: lineLimit) { _, _ in
+            if !showBootLogs {
+                loadLogs()
+            }
+        }
+        .alert("Error", isPresented: .constant(errorMessage != nil)) {
+            Button("OK") {
+                errorMessage = nil
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+    }
+    
+    private func loadLogs() {
+        isLoading = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let result: String
+                if showBootLogs {
+                    result = try await containerService.getContainerBootLogs(container.name)
+                } else {
+                    let lines = lineLimit == -1 ? nil : lineLimit
+                    result = try await containerService.getContainerLogs(container.name, lines: lines)
+                }
+                
+                await MainActor.run {
+                    logs = result
+                    isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = "Failed to load logs: \(error.localizedDescription)"
+                    isLoading = false
+                }
+            }
         }
     }
 }

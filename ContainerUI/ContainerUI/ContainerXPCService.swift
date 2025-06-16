@@ -58,8 +58,7 @@ class ContainerXPCServiceManager {
                         return Container(
                             name: name,
                             image: image,
-                            status: status,
-                            created: Date().addingTimeInterval(-Double.random(in: 0...86400))
+                            status: status
                         )
                     }
                     continuation.resume(returning: parsedContainers)

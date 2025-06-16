@@ -89,6 +89,24 @@ class ContainerService: ObservableObject {
         _ = try await executeCommand([containerCommand, "images", "delete", imageName])
     }
     
+    func getContainerLogs(_ containerName: String, lines: Int? = nil, follow: Bool = false) async throws -> String {
+        var args = [containerCommand, "logs"]
+        if let lines = lines {
+            args.append(contentsOf: ["-n", "\(lines)"])
+        }
+        if follow {
+            args.append("-f")
+        }
+        args.append(containerName)
+        
+        return try await executeCommand(args)
+    }
+    
+    func getContainerBootLogs(_ containerName: String) async throws -> String {
+        let args = [containerCommand, "logs", "--boot", containerName]
+        return try await executeCommand(args)
+    }
+    
     func createAndRunContainer(image: String, name: String? = nil) async throws {
         var args = [containerCommand, "run", "-d"]
         if let name = name {
@@ -165,8 +183,8 @@ class ContainerService: ObservableObject {
         let lines = trimmedOutput.components(separatedBy: .newlines)
             .filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         
-        // Skip header line if present
-        let dataLines = lines.count > 1 && lines[0].contains("ID") ? Array(lines.dropFirst()) : lines
+        // Always skip header line - first line is always the header
+        let dataLines = lines.count > 1 ? Array(lines.dropFirst()) : []
         
         var containers: [Container] = []
         
@@ -199,8 +217,7 @@ class ContainerService: ObservableObject {
                 let container = Container(
                     name: id,
                     image: displayImage,
-                    status: status,
-                    created: Date()
+                    status: status
                 )
                 containers.append(container)
             }
