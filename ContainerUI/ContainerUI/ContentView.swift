@@ -74,80 +74,37 @@ struct ContentView: View {
     @State private var logsContainer: Container?
     
     var body: some View {
-        HStack(spacing: 0) {
-            // Left Sidebar - Tabs
-            VStack(spacing: 0) {
-                Text("Container UI")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .padding()
-                
-                Divider()
-                
-                VStack(spacing: 8) {
-                    ForEach(AppTab.allCases, id: \.self) { tab in
-                        Button(action: {
-                            selectedTab = tab
-                            selectedItem = nil // Clear selection when switching tabs
-                        }) {
-                            HStack {
-                                Image(systemName: tab.systemImage)
-                                    .frame(width: 16)
-                                Text(tab.rawValue)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(selectedTab == tab ? Color.accentColor.opacity(0.2) : Color.clear)
-                            .foregroundColor(selectedTab == tab ? .accentColor : .primary)
-                            .cornerRadius(6)
-                        }
-                        .buttonStyle(.plain)
+        NavigationSplitView {
+            // Left Sidebar
+            List(selection: $selectedTab) {
+                ForEach(AppTab.allCases, id: \.self) { tab in
+                    NavigationLink(value: tab) {
+                        Label(tab.rawValue, systemImage: tab.systemImage)
                     }
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 8)
-                
-                Spacer()
-                
-                VStack(spacing: 8) {
-                    Button("Refresh") {
-                        refreshAll()
-                    }
-                    .buttonStyle(.bordered)
-                    
-                    Button("New Container") {
-                        showingNewContainerSheet = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-                .padding()
             }
-            .frame(width: 180)
-            .background(Color(NSColor.controlBackgroundColor))
-            
-            Divider()
-            
-            // Center Content Area
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Text(selectedTab.rawValue)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    if containerService.isLoading {
-                        ProgressView()
-                            .scaleEffect(0.7)
+            .navigationTitle("Container UI")
+            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
+            .toolbar {
+                ToolbarItem(placement: .bottomBar) {
+                    HStack {
+                        Button("Refresh") {
+                            refreshAll()
+                        }
+                        .buttonStyle(.bordered)
+                        
+                        Spacer()
+                        
+                        Button("New Container") {
+                            showingNewContainerSheet = true
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
-                .padding()
-                
-                Divider()
-                
-                // Content List
+            }
+        } content: {
+            // Center Content
+            Group {
                 if selectedTab == .containers {
                     ContainerListView(
                         containers: containerService.containers,
@@ -166,44 +123,40 @@ struct ContentView: View {
                     )
                 }
             }
-            .frame(minWidth: 300)
-            
-            Divider()
-            
-            // Right Sidebar - Actions
+            .navigationTitle(selectedTab.rawValue)
+            .navigationSplitViewColumnWidth(min: 300, ideal: 400, max: 600)
+            .toolbar {
+                if containerService.isLoading {
+                    ToolbarItem(placement: .primaryAction) {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
+                }
+            }
+        } detail: {
+            // Right Inspector
             if let selectedItem = selectedItem {
                 switch selectedItem {
                 case .container(let container):
-                    ContainerActionsView(
+                    ContainerInspectorView(
                         container: container,
                         containerService: containerService,
                         onShowLogs: { showLogs(for: container) }
                     )
                 case .image(let image):
-                    ImageActionsView(
+                    ImageInspectorView(
                         image: image,
                         containerService: containerService
                     )
                 }
             } else {
-                VStack {
-                    Image(systemName: selectedTab.systemImage)
-                        .font(.system(size: 48))
-                        .foregroundStyle(.tertiary)
-                    
-                    Text("Select a \(selectedTab.rawValue.lowercased().dropLast())")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    
-                    Text("Choose an item to see available actions")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(width: 250)
-                .frame(maxHeight: .infinity)
+                ContentUnavailableView(
+                    "Select an Item",
+                    systemImage: selectedTab.systemImage,
+                    description: Text("Choose a \(selectedTab.rawValue.lowercased().dropLast()) to see details and actions")
+                )
             }
         }
-        .frame(minWidth: 900, minHeight: 600)
         .task {
             await refreshAll()
         }
@@ -321,20 +274,11 @@ struct ContainerListView: View {
     
     var body: some View {
         if containers.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "shippingbox")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-                
-                Text("No containers")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                
-                Text("Create a new container to get started")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ContentUnavailableView(
+                "No Containers",
+                systemImage: "shippingbox",
+                description: Text("Create a new container to get started")
+            )
         } else {
             List(containers, id: \.id, selection: Binding(
                 get: {
@@ -352,28 +296,27 @@ struct ContainerListView: View {
                 ContainerRow(container: container)
                     .tag(container)
                     .contextMenu {
-                        Button("Start") {
+                        Button("Start", systemImage: "play.fill") {
                             onContainerAction("start", container)
                         }
                         .disabled(container.status == .running)
                         
-                        Button("Stop") {
+                        Button("Stop", systemImage: "stop.fill") {
                             onContainerAction("stop", container)
                         }
                         .disabled(container.status != .running)
                         
-                        Button("View Logs") {
+                        Button("View Logs", systemImage: "doc.text") {
                             onContainerAction("logs", container)
                         }
                         
                         Divider()
                         
-                        Button("Delete", role: .destructive) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
                             onContainerAction("delete", container)
                         }
                     }
             }
-            .listStyle(.plain)
         }
     }
 }
@@ -385,20 +328,11 @@ struct ImageListView: View {
     
     var body: some View {
         if images.isEmpty {
-            VStack(spacing: 16) {
-                Image(systemName: "disc")
-                    .font(.system(size: 48))
-                    .foregroundStyle(.secondary)
-                
-                Text("No images")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                
-                Text("Pull an image to get started")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            ContentUnavailableView(
+                "No Images",
+                systemImage: "disc",
+                description: Text("Pull an image to get started")
+            )
         } else {
             List(images, id: \.id, selection: Binding(
                 get: {
@@ -416,18 +350,17 @@ struct ImageListView: View {
                 ImageRow(image: image)
                     .tag(image)
                     .contextMenu {
-                        Button("Create Container") {
+                        Button("Create Container", systemImage: "plus.rectangle") {
                             onImageAction("create", image)
                         }
                         
                         Divider()
                         
-                        Button("Delete", role: .destructive) {
+                        Button("Delete", systemImage: "trash", role: .destructive) {
                             onImageAction("delete", image)
                         }
                     }
             }
-            .listStyle(.plain)
         }
     }
 }
@@ -552,245 +485,140 @@ struct ImageDetailView: View {
     }
 }
 
-struct ContainerActionsView: View {
+struct ContainerInspectorView: View {
     let container: Container
     @ObservedObject var containerService: ContainerService
     let onShowLogs: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(container.name)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    Text(container.status.displayName)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(container.status.color.opacity(0.2))
-                        .foregroundColor(container.status.color)
-                        .clipShape(Capsule())
+        List {
+            Section("Container Info") {
+                LabeledContent("Name", value: container.name)
+                LabeledContent("Image", value: container.image)
+                LabeledContent("Status") {
+                    HStack {
+                        Circle()
+                            .fill(container.status.color)
+                            .frame(width: 8, height: 8)
+                        Text(container.status.displayName)
+                    }
                 }
-                
-                Text(container.image)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
-            .padding()
             
-            Divider()
-            
-            // Actions
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Actions")
-                    .font(.headline)
-                    .padding(.horizontal)
-                    .padding(.top)
-                
-                VStack(spacing: 4) {
-                    ActionButton(
-                        title: "Start",
-                        systemImage: "play.fill",
-                        color: .green,
-                        disabled: container.status == .running
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.startContainer(container.name)
-                                await containerService.refreshContainers()
-                            } catch {
-                                print("Failed to start container: \(error)")
-                            }
-                        }
-                    }
-                    
-                    ActionButton(
-                        title: "Stop",
-                        systemImage: "stop.fill",
-                        color: .orange,
-                        disabled: container.status != .running
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.stopContainer(container.name)
-                                await containerService.refreshContainers()
-                            } catch {
-                                print("Failed to stop container: \(error)")
-                            }
-                        }
-                    }
-                    
-                    ActionButton(
-                        title: "Restart",
-                        systemImage: "arrow.clockwise",
-                        color: .blue
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.stopContainer(container.name)
-                                try await containerService.startContainer(container.name)
-                                await containerService.refreshContainers()
-                            } catch {
-                                print("Failed to restart container: \(error)")
-                            }
-                        }
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 4)
-                    
-                    ActionButton(
-                        title: "View Logs",
-                        systemImage: "doc.text",
-                        color: .blue
-                    ) {
-                        onShowLogs()
-                    }
-                    
-                    ActionButton(
-                        title: "Open Terminal",
-                        systemImage: "terminal",
-                        color: .blue
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.openTerminal(for: container.name)
-                            } catch {
-                                print("Failed to open terminal: \(error)")
-                            }
-                        }
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 4)
-                    
-                    ActionButton(
-                        title: "Delete",
-                        systemImage: "trash",
-                        color: .red
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.deleteContainer(container.name)
-                                await containerService.refreshContainers()
-                            } catch {
-                                print("Failed to delete container: \(error)")
-                            }
+            Section("Actions") {
+                Button("Start Container") {
+                    Task {
+                        do {
+                            try await containerService.startContainer(container.name)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to start container: \(error)")
                         }
                     }
                 }
-                .padding(.horizontal)
+                .disabled(container.status == .running)
+                
+                Button("Stop Container") {
+                    Task {
+                        do {
+                            try await containerService.stopContainer(container.name)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to stop container: \(error)")
+                        }
+                    }
+                }
+                .disabled(container.status != .running)
+                
+                Button("Restart Container") {
+                    Task {
+                        do {
+                            try await containerService.stopContainer(container.name)
+                            try await containerService.startContainer(container.name)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to restart container: \(error)")
+                        }
+                    }
+                }
             }
             
-            Spacer()
+            Section("Debug") {
+                Button("View Logs") {
+                    onShowLogs()
+                }
+                
+                Button("Open Terminal") {
+                    Task {
+                        do {
+                            try await containerService.openTerminal(for: container.name)
+                        } catch {
+                            print("Failed to open terminal: \(error)")
+                        }
+                    }
+                }
+            }
+            
+            Section("Danger Zone") {
+                Button("Delete Container", role: .destructive) {
+                    Task {
+                        do {
+                            try await containerService.deleteContainer(container.name)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to delete container: \(error)")
+                        }
+                    }
+                }
+            }
         }
-        .frame(width: 250)
-        .background(Color(NSColor.controlBackgroundColor))
+        .navigationTitle("Container Details")
     }
 }
 
-struct ImageActionsView: View {
+struct ImageInspectorView: View {
     let image: ContainerImage
     @ObservedObject var containerService: ContainerService
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            VStack(alignment: .leading, spacing: 8) {
-                Text(image.displayName)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                
-                Text(image.digest.prefix(12))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        List {
+            Section("Image Info") {
+                LabeledContent("Name", value: image.name)
+                LabeledContent("Tag", value: image.tag)
+                LabeledContent("Digest") {
+                    Text(image.digest)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                }
             }
-            .padding()
             
-            Divider()
-            
-            // Actions
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Actions")
-                    .font(.headline)
-                    .padding(.horizontal)
-                    .padding(.top)
-                
-                VStack(spacing: 4) {
-                    ActionButton(
-                        title: "Create Container",
-                        systemImage: "plus.rectangle",
-                        color: .blue
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.createAndRunContainer(image: image.displayName)
-                                await containerService.refreshContainers()
-                            } catch {
-                                print("Failed to create container: \(error)")
-                            }
-                        }
-                    }
-                    
-                    Divider()
-                        .padding(.vertical, 4)
-                    
-                    ActionButton(
-                        title: "Delete Image",
-                        systemImage: "trash",
-                        color: .red
-                    ) {
-                        Task {
-                            do {
-                                try await containerService.deleteImage(image.displayName)
-                                await containerService.refreshImages()
-                            } catch {
-                                print("Failed to delete image: \(error)")
-                            }
+            Section("Actions") {
+                Button("Create Container") {
+                    Task {
+                        do {
+                            try await containerService.createAndRunContainer(image: image.displayName)
+                            await containerService.refreshContainers()
+                        } catch {
+                            print("Failed to create container: \(error)")
                         }
                     }
                 }
-                .padding(.horizontal)
             }
             
-            Spacer()
-        }
-        .frame(width: 250)
-        .background(Color(NSColor.controlBackgroundColor))
-    }
-}
-
-struct ActionButton: View {
-    let title: String
-    let systemImage: String
-    let color: Color
-    var disabled: Bool = false
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: systemImage)
-                    .frame(width: 16)
-                    .foregroundColor(disabled ? .secondary : color)
-                
-                Text(title)
-                    .foregroundColor(disabled ? .secondary : .primary)
-                
-                Spacer()
+            Section("Danger Zone") {
+                Button("Delete Image", role: .destructive) {
+                    Task {
+                        do {
+                            try await containerService.deleteImage(image.displayName)
+                            await containerService.refreshImages()
+                        } catch {
+                            print("Failed to delete image: \(error)")
+                        }
+                    }
+                }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(disabled ? Color.clear : Color(NSColor.controlColor))
-            .cornerRadius(6)
         }
-        .buttonStyle(.plain)
-        .disabled(disabled)
+        .navigationTitle("Image Details")
     }
 }
 
