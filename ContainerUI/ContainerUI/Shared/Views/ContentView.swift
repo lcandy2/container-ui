@@ -42,7 +42,7 @@ struct ContentView: View {
                     .buttonStyle(.borderedProminent)
                 }
             }
-        } content: {
+        } detail: {
             // Main Content Area
             Group {
                 if selectedTab == .containers {
@@ -94,13 +94,6 @@ struct ContentView: View {
                     containerService: containerService
                 )
             }
-        } detail: {
-            // Detail view for when no inspector is used
-            ContentUnavailableView(
-                "Welcome to Container UI",
-                systemImage: "shippingbox.fill",
-                description: Text("Select items from the sidebar and use the inspector to view details and perform actions.")
-            )
         }
         .task {
             await refreshAll()
