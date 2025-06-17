@@ -11,7 +11,7 @@ import ContainerModels
 
 struct ContainerInspectorView: View {
     let container: Container
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     @Environment(\.openWindow) private var openWindow
     
     var body: some View {

@@ -11,7 +11,7 @@ import ContainerModels
 
 struct ImageInspectorView: View {
     let image: ContainerImage
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     
     var body: some View {
         List {

@@ -10,7 +10,7 @@ import SwiftUI
 import ContainerModels
 
 struct ContentView: View {
-    @State private var containerService = ContainerService()
+    @Environment(ContainerService.self) private var containerService
     @State private var selectedTab: AppTab = .containers
     @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
@@ -69,7 +69,6 @@ struct ContentView: View {
                 } else {
                     SystemListView(
                         selectedItem: $selectedItem,
-                        containerService: containerService,
                         onRefresh: {
                             Task {
                                 await containerService.refreshSystemInfo()
@@ -100,8 +99,7 @@ struct ContentView: View {
                 // Inspector Content
                 InspectorView(
                     selectedItem: selectedItem,
-                    selectedTab: selectedTab,
-                    containerService: containerService
+                    selectedTab: selectedTab
                 )
             }
         }
@@ -116,7 +114,7 @@ struct ContentView: View {
             Text(containerService.errorMessage ?? "")
         }
         .sheet(isPresented: $showingNewContainerSheet) {
-            NewContainerView(containerService: containerService)
+            NewContainerView()
         }
     }
     

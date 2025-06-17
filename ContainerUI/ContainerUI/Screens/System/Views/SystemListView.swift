@@ -11,7 +11,7 @@ import ContainerModels
 
 struct SystemListView: View {
     @Binding var selectedItem: SelectedItem?
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     let onRefresh: () -> Void
     
     var body: some View {
@@ -28,7 +28,7 @@ struct SystemListView: View {
         }
         .padding()
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .automatic) {
                 Button("Refresh") {
                     onRefresh()
                 }

@@ -10,14 +10,18 @@ import SwiftUI
 
 @main
 struct ContainerUIApp: App {
+    @State private var containerService = ContainerService()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(containerService)
         }
         
         WindowGroup("Logs", id: "universal-logs", for: String.self) { $logSourceId in
             if let logSourceId = logSourceId {
                 UniversalLogsWindow(logSourceId: logSourceId)
+                    .environment(containerService)
             } else {
                 ContentUnavailableView(
                     "No Log Source",

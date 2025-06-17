@@ -12,18 +12,18 @@ import ContainerModels
 struct InspectorView: View {
     let selectedItem: SelectedItem?
     let selectedTab: AppTab
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     
     var body: some View {
         Group {
             if let selectedItem = selectedItem {
                 switch selectedItem {
                 case .container(let container):
-                    ContainerInspectorView(container: container, containerService: containerService)
+                    ContainerInspectorView(container: container)
                 case .image(let image):
-                    ImageInspectorView(image: image, containerService: containerService)
+                    ImageInspectorView(image: image)
                 case .system:
-                    SystemInspectorView(containerService: containerService)
+                    SystemInspectorView()
                 }
             } else {
                 // Show appropriate empty state based on the current tab
@@ -75,8 +75,8 @@ struct InspectorView: View {
 #Preview {
     InspectorView(
         selectedItem: nil,
-        selectedTab: .containers,
-        containerService: ContainerService()
+        selectedTab: .containers
     )
+    .environment(ContainerService())
     .frame(width: 350, height: 600)
 }

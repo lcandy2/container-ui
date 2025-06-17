@@ -11,7 +11,7 @@ import ContainerModels
 
 struct NewContainerView: View {
     @Environment(\.dismiss) private var dismiss
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     
     @State private var imageName = "alpine:latest"
     @State private var containerName = ""

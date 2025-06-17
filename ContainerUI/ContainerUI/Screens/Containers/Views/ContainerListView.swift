@@ -60,7 +60,7 @@ struct ContainerListView: View {
                                             }
             }
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItem(placement: .automatic) {
                     Button("Refresh") {
                         onRefresh()
                     }

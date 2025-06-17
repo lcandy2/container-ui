@@ -10,7 +10,7 @@ import SwiftUI
 import ContainerModels
 
 struct SystemInspectorView: View {
-    @Bindable var containerService: ContainerService
+    @Environment(ContainerService.self) private var containerService
     @State private var newDomainName = ""
     @State private var showingAddDomainAlert = false
     @Environment(\.openWindow) private var openWindow
