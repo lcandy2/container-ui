@@ -8,29 +8,35 @@
 
 import Foundation
 
-/// The protocol that this service will vend as its API. This protocol will also need to be visible to the process hosting the service.
+/// The protocol that this service will vend as its API for container management operations.
 @objc protocol ContainerXPCServiceProtocol {
     
-    /// Replace the API of this protocol with an API appropriate to the service you are vending.
-    func performCalculation(firstNumber: Int, secondNumber: Int, with reply: @escaping (Int) -> Void)
+    // MARK: - Container Management
+    func listContainers(reply: @escaping ([String: Any]) -> Void)
+    func listImages(reply: @escaping ([String: Any]) -> Void)
+    func startContainer(_ containerID: String, reply: @escaping (Error?) -> Void)
+    func stopContainer(_ containerID: String, reply: @escaping (Error?) -> Void)
+    func deleteContainer(_ containerID: String, reply: @escaping (Error?) -> Void)
+    func deleteImage(_ imageName: String, reply: @escaping (Error?) -> Void)
+    func createAndRunContainer(image: String, name: String?, reply: @escaping (Error?) -> Void)
+    
+    // MARK: - Log Operations
+    func getContainerLogs(_ containerID: String, lines: Int?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void)
+    func getContainerBootLogs(_ containerID: String, reply: @escaping (Result<String, Error>) -> Void)
+    
+    // MARK: - System Management
+    func getSystemStatus(reply: @escaping ([String: Any]) -> Void)
+    func startSystem(reply: @escaping (Error?) -> Void)
+    func stopSystem(reply: @escaping (Error?) -> Void)
+    func restartSystem(reply: @escaping (Error?) -> Void)
+    func getSystemLogs(timeFilter: String?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void)
+    
+    // MARK: - DNS Management
+    func listDNSDomains(reply: @escaping ([String: Any]) -> Void)
+    func createDNSDomain(_ domain: String, reply: @escaping (Error?) -> Void)
+    func deleteDNSDomain(_ domain: String, reply: @escaping (Error?) -> Void)
+    func setDefaultDNSDomain(_ domain: String, reply: @escaping (Error?) -> Void)
+    
+    // MARK: - Terminal Operations
+    func openTerminal(for containerID: String, reply: @escaping (Error?) -> Void)
 }
-
-/*
- To use the service from an application or other process, use NSXPCConnection to establish a connection to the service by doing something like this:
-
-     connectionToService = NSXPCConnection(serviceName: "cc.citrons.ContainerXPCService")
-     connectionToService.remoteObjectInterface = NSXPCInterface(with: (any ContainerXPCServiceProtocol).self)
-     connectionToService.resume()
-
- Once you have a connection to the service, you can use it like this:
-
-     if let proxy = connectionToService.remoteObjectProxy as? ContainerXPCServiceProtocol {
-         proxy.performCalculation(firstNumber: 23, secondNumber: 19) { result in
-             NSLog("Result of calculation is: \(result)")
-         }
-     }
-
- And, when you are finished with the service, clean up the connection like this:
-
-     connectionToService.invalidate()
-*/
