@@ -10,7 +10,7 @@ import SwiftUI
 import ContainerModels
 
 struct ContentView: View {
-    @StateObject private var containerService = ContainerService()
+    @State private var containerService = ContainerService()
     @State private var selectedTab: AppTab = .containers
     @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false

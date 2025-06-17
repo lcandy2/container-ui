@@ -12,7 +12,7 @@ import ContainerModels
 struct InspectorView: View {
     let selectedItem: SelectedItem?
     let selectedTab: AppTab
-    @ObservedObject var containerService: ContainerService
+    @Bindable var containerService: ContainerService
     
     var body: some View {
         Group {

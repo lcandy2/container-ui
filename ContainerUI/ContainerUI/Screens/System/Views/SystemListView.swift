@@ -11,7 +11,7 @@ import ContainerModels
 
 struct SystemListView: View {
     @Binding var selectedItem: SelectedItem?
-    @ObservedObject var containerService: ContainerService
+    @Bindable var containerService: ContainerService
     let onRefresh: () -> Void
     
     var body: some View {

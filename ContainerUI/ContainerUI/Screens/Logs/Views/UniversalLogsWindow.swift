@@ -11,7 +11,7 @@ import ContainerModels
 
 struct UniversalLogsWindow: View {
     let logSourceId: String
-    @StateObject private var containerService = ContainerService()
+    @State private var containerService = ContainerService()
     @Environment(\.openWindow) private var openWindow
     
     private var logSource: LogSource? {

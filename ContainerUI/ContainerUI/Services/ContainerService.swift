@@ -7,7 +7,7 @@
 //
 
 import Foundation
-internal import Combine
+import Observation
 import os.log
 import ContainerModels
 
@@ -38,13 +38,13 @@ private let xpcClientLogger = Logger(subsystem: "cc.citrons.ContainerUI", catego
     func openTerminal(for containerID: String, reply: @escaping (Error?) -> Void)
 }
 
-@MainActor
-class ContainerService: ObservableObject {
-    @Published var containers: [Container] = []
-    @Published var images: [ContainerImage] = []
-    @Published var systemInfo: SystemInfo?
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+@Observable @MainActor
+class ContainerService {
+    var containers: [Container] = []
+    var images: [ContainerImage] = []
+    var systemInfo: SystemInfo?
+    var isLoading = false
+    var errorMessage: String?
     
     private let xpcService = ContainerXPCServiceManager()
     
