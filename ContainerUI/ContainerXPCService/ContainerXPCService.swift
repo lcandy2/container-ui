@@ -303,25 +303,33 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
     // MARK: - Helper Methods
     
     private func ensureContainerSystemStarted() async throws {
+        serviceLogger.info("🔧 XPC Service: Checking if container system is running")
         // Check if system is already running by trying a simple command
         do {
-            _ = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
+            let output = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
+            serviceLogger.info("✅ XPC Service: Container system is already running")
+            serviceLogger.debug("📄 XPC Service: Test output: \(output)")
         } catch {
             // If list fails, try starting the system
-            print("Container system not running, attempting to start...")
+            serviceLogger.warning("⚠️ XPC Service: Container system not running, attempting to start...")
             _ = try await executeCommand([containerCommand, "system", "start"])
             
             // Wait a moment for system to initialize
             try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+            serviceLogger.info("✅ XPC Service: Container system start command completed")
         }
     }
     
     private func executeCommand(_ arguments: [String]) async throws -> String {
+        serviceLogger.info("🚀 XPC Service: Executing command: \(arguments.joined(separator: " "))")
+        
         // Check if we can access the container binary
         let containerPath = containerCommand
+        serviceLogger.info("🔍 XPC Service: Using container path: \(containerPath)")
         
         // XPC service runs outside sandbox, so should have access
         guard FileManager.default.isExecutableFile(atPath: containerPath) || containerPath == "container" else {
+            serviceLogger.error("❌ XPC Service: Container CLI tool not found at \(containerPath)")
             throw ContainerXPCError.commandFailed("Container CLI tool not found at \(containerPath). Please ensure Apple's container tool is installed and accessible.")
         }
         
@@ -348,11 +356,16 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
                 let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
                 
+                serviceLogger.info("🏁 XPC Service: Command completed with exit code: \(process.terminationStatus)")
+                
                 if process.terminationStatus == 0 {
                     let output = String(data: data, encoding: .utf8) ?? ""
+                    serviceLogger.info("✅ XPC Service: Command output length: \(output.count) characters")
+                    serviceLogger.debug("📄 XPC Service: Raw output: \(output)")
                     continuation.resume(returning: output)
                 } else {
                     let errorMessage = String(data: errorData, encoding: .utf8) ?? "Unknown error"
+                    serviceLogger.error("❌ XPC Service: Command failed with error: \(errorMessage)")
                     let fullError = "Command failed: \(errorMessage)"
                     continuation.resume(throwing: ContainerXPCError.commandFailed(fullError))
                 }
@@ -369,41 +382,55 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
     // MARK: - JSON Parsing Methods
     
     private func parseContainerList(_ output: String) throws -> [ContainerData] {
+        serviceLogger.info("🔍 XPC Service: Parsing container list output")
         let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        serviceLogger.debug("📝 XPC Service: Trimmed output: '\(trimmedOutput)'")
+        
         guard !trimmedOutput.isEmpty else {
+            serviceLogger.info("ℹ️ XPC Service: Empty output, returning empty container list")
             return []
         }
         
         // Parse JSON output from container ls -a --format json
         guard let data = trimmedOutput.data(using: .utf8) else {
+            serviceLogger.error("❌ XPC Service: Failed to convert output to UTF-8 data")
             throw ContainerXPCError.invalidOutput
         }
         
         do {
             let containerJSONList = try JSONDecoder().decode([ContainerJSONData].self, from: data)
+            serviceLogger.info("✅ XPC Service: Successfully parsed \(containerJSONList.count) containers")
             return containerJSONList.map { $0.toContainerData() }
         } catch {
-            print("JSON parsing error: \(error)")
+            serviceLogger.error("❌ XPC Service: JSON parsing error: \(error)")
+            serviceLogger.error("🔍 XPC Service: Failed to parse JSON: '\(trimmedOutput)'")
             throw ContainerXPCError.invalidOutput
         }
     }
     
     private func parseImageList(_ output: String) throws -> [ImageData] {
+        serviceLogger.info("🔍 XPC Service: Parsing image list output")
         let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        serviceLogger.debug("📝 XPC Service: Trimmed image output: '\(trimmedOutput)'")
+        
         guard !trimmedOutput.isEmpty else {
+            serviceLogger.info("ℹ️ XPC Service: Empty output, returning empty image list")
             return []
         }
         
         // Parse JSON output from container image ls --format json
         guard let data = trimmedOutput.data(using: .utf8) else {
+            serviceLogger.error("❌ XPC Service: Failed to convert image output to UTF-8 data")
             throw ContainerXPCError.invalidOutput
         }
         
         do {
             let imageJSONList = try JSONDecoder().decode([ImageJSONData].self, from: data)
+            serviceLogger.info("✅ XPC Service: Successfully parsed \(imageJSONList.count) images")
             return imageJSONList.map { $0.toImageData() }
         } catch {
-            print("Image JSON parsing error: \(error)")
+            serviceLogger.error("❌ XPC Service: Image JSON parsing error: \(error)")
+            serviceLogger.error("🔍 XPC Service: Failed to parse image JSON: '\(trimmedOutput)'")
             throw ContainerXPCError.invalidOutput
         }
     }
@@ -524,35 +551,54 @@ struct DNSDomainData {
 // MARK: - JSON Parsing Models
 
 struct ContainerJSONData: Codable {
-    let containerID: String
-    let name: String
-    let image: String
-    let imageReference: String?
-    let imageDigest: String?
-    let hostname: String?
+    let id: String
     let status: String
-    let os: String
-    let arch: String
-    let cpus: Int?
-    let memoryInBytes: Int64?
     let networks: [NetworkJSONData]?
-    let rosetta: Bool?
+    let configuration: ConfigurationData
+    
+    struct ConfigurationData: Codable {
+        let hostname: String
+        let platform: PlatformData
+        let image: ImageRefData
+        let resources: ResourcesData
+        let rosetta: Bool
+        
+        struct PlatformData: Codable {
+            let architecture: String
+            let os: String
+        }
+        
+        struct ImageRefData: Codable {
+            let reference: String
+        }
+        
+        struct ResourcesData: Codable {
+            let cpus: Int
+            let memoryInBytes: Int64
+        }
+    }
     
     func toContainerData() -> ContainerData {
+        // Extract name from image reference or use hostname
+        let imageRef = configuration.image.reference
+        let imageParts = imageRef.split(separator: "/").last?.split(separator: ":") ?? []
+        let imageName = imageParts.first.map(String.init) ?? imageRef
+        let name = configuration.hostname
+        
         return ContainerData(
-            containerID: containerID,
+            containerID: id,
             name: name,
-            image: image,
-            imageReference: imageReference ?? image,
-            imageDigest: imageDigest ?? "",
-            hostname: hostname ?? name,
+            image: imageName,
+            imageReference: imageRef,
+            imageDigest: "", // Not provided in this format
+            hostname: configuration.hostname,
             status: status,
-            os: os,
-            arch: arch,
-            cpus: cpus ?? 0,
-            memoryInBytes: memoryInBytes ?? 0,
+            os: configuration.platform.os,
+            arch: configuration.platform.architecture,
+            cpus: configuration.resources.cpus,
+            memoryInBytes: configuration.resources.memoryInBytes,
             networks: networks?.map { $0.toNetworkData() } ?? [],
-            rosetta: rosetta ?? false
+            rosetta: configuration.rosetta
         )
     }
 }
@@ -574,21 +620,31 @@ struct NetworkJSONData: Codable {
 }
 
 struct ImageJSONData: Codable {
-    let name: String
-    let tag: String
-    let reference: String?
-    let digest: String?
-    let size: Int64
-    let created: String?
+    let reference: String
+    let descriptor: DescriptorData
+    
+    struct DescriptorData: Codable {
+        let mediaType: String
+        let digest: String
+        let size: Int64
+    }
     
     func toImageData() -> ImageData {
+        // Parse name and tag from reference like "docker.io/library/alpine:latest"
+        let parts = reference.split(separator: "/")
+        let nameWithTag = parts.last?.description ?? reference
+        let nameTagParts = nameWithTag.split(separator: ":")
+        
+        let name = nameTagParts.first.map(String.init) ?? reference
+        let tag = nameTagParts.count > 1 ? String(nameTagParts[1]) : "latest"
+        
         return ImageData(
             name: name,
             tag: tag,
-            reference: reference ?? "\(name):\(tag)",
-            digest: digest ?? "",
-            size: size,
-            created: created
+            reference: reference,
+            digest: descriptor.digest,
+            size: descriptor.size,
+            created: nil // Not provided in this format
         )
     }
 }
