@@ -46,11 +46,6 @@ struct ContentView: View {
                         selectedItem: $selectedItem,
                         onContainerAction: { action, container in
                             handleContainerAction(action, container)
-                        },
-                        onRefresh: {
-                            Task { @MainActor in
-                                await containerService.refreshContainers()
-                            }
                         }
                     )
                 } else if selectedTab == .images {
@@ -59,21 +54,11 @@ struct ContentView: View {
                         selectedItem: $selectedItem,
                         onImageAction: { action, image in
                             handleImageAction(action, image)
-                        },
-                        onRefresh: {
-                            Task { @MainActor in
-                                await containerService.refreshImages()
-                            }
                         }
                     )
                 } else {
                     SystemListView(
-                        selectedItem: $selectedItem,
-                        onRefresh: {
-                            Task { @MainActor in
-                                await containerService.refreshSystemInfo()
-                            }
-                        }
+                        selectedItem: $selectedItem
                     )
                 }
             }

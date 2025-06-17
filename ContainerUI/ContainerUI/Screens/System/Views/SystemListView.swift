@@ -12,7 +12,6 @@ import ContainerModels
 struct SystemListView: View {
     @Binding var selectedItem: SelectedItem?
     @Environment(ContainerService.self) private var containerService
-    let onRefresh: () -> Void
     
     var body: some View {
         VStack(spacing: 20) {
@@ -30,7 +29,9 @@ struct SystemListView: View {
         .toolbar {
             ToolbarItem(placement: .automatic) {
                 Button("Refresh") {
-                    onRefresh()
+                    Task { @MainActor in
+                        await containerService.refreshSystemInfo()
+                    }
                 }
                 .buttonStyle(.bordered)
             }

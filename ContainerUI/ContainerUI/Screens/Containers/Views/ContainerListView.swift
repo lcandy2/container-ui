@@ -13,7 +13,7 @@ struct ContainerListView: View {
     let containers: [Container]
     @Binding var selectedItem: SelectedItem?
     let onContainerAction: (String, Container) -> Void
-    let onRefresh: () -> Void
+    @Environment(ContainerService.self) private var containerService
     
     var body: some View {
         if containers.isEmpty {
@@ -62,7 +62,9 @@ struct ContainerListView: View {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button("Refresh") {
-                        onRefresh()
+                        Task { @MainActor in
+                            await containerService.refreshContainers()
+                        }
                     }
                     .buttonStyle(.bordered)
                 }

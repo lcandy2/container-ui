@@ -13,7 +13,7 @@ struct ImageListView: View {
     let images: [ContainerImage]
     @Binding var selectedItem: SelectedItem?
     let onImageAction: (String, ContainerImage) -> Void
-    let onRefresh: () -> Void
+    @Environment(ContainerService.self) private var containerService
     
     var body: some View {
         if images.isEmpty {
@@ -52,7 +52,9 @@ struct ImageListView: View {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button("Refresh") {
-                        onRefresh()
+                        Task { @MainActor in
+                            await containerService.refreshImages()
+                        }
                     }
                     .buttonStyle(.bordered)
                 }
