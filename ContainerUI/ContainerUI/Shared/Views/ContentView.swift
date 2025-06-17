@@ -14,7 +14,7 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .containers
     @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
-    @State private var isInspectorPresented = false
+    @State private var isInspectorPresented = true
     @Environment(\.openWindow) private var openWindow
     
     var body: some View {
@@ -106,7 +106,10 @@ struct ContentView: View {
         .task {
             await refreshAll()
         }
-        .alert("Error", isPresented: .constant(containerService.errorMessage != nil)) {
+        .alert("Error", isPresented: Binding(
+            get: { containerService.errorMessage != nil },
+            set: { _ in containerService.errorMessage = nil }
+        )) {
             Button("OK") {
                 containerService.errorMessage = nil
             }
@@ -118,12 +121,10 @@ struct ContentView: View {
         }
     }
     
-    private func refreshAll() {
-        Task {
-            await containerService.refreshContainers()
-            await containerService.refreshImages()
-            await containerService.refreshSystemInfo()
-        }
+    private func refreshAll() async {
+        await containerService.refreshContainers()
+        await containerService.refreshImages()
+        await containerService.refreshSystemInfo()
     }
     
     private func startContainer(_ container: Container) {

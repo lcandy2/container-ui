@@ -50,24 +50,37 @@ class ContainerService {
     
     func refreshContainers() async {
         xpcClientLogger.info("🔄 ContainerService: Starting container refresh")
-        isLoading = true
-        errorMessage = nil
+        
+        await MainActor.run {
+            isLoading = true
+            errorMessage = nil
+        }
         
         do {
-            containers = try await xpcService.listContainers()
+            let newContainers = try await xpcService.listContainers()
+            await MainActor.run {
+                containers = newContainers
+            }
             xpcClientLogger.info("✅ ContainerService: Container refresh completed successfully")
         } catch {
-            errorMessage = "Failed to load containers: \(error.localizedDescription)"
+            await MainActor.run {
+                errorMessage = "Failed to load containers: \(error.localizedDescription)"
+            }
             xpcClientLogger.error("❌ ContainerService: Container refresh failed: \(error.localizedDescription)")
             print("Container list error: \(error)")
         }
         
-        isLoading = false
+        await MainActor.run {
+            isLoading = false
+        }
     }
     
     func refreshImages() async {
         do {
-            images = try await xpcService.listImages()
+            let newImages = try await xpcService.listImages()
+            await MainActor.run {
+                images = newImages
+            }
         } catch {
             print("Image list error: \(error)")
         }
@@ -114,11 +127,15 @@ class ContainerService {
             let dnsSettings = try await listDNSDomains()
             let kernelInfo = try await getKernelInfo()
             
-            systemInfo = SystemInfo(
+            let newSystemInfo = SystemInfo(
                 serviceStatus: serviceStatus,
                 dnsSettings: dnsSettings,
                 kernelInfo: kernelInfo
             )
+            
+            await MainActor.run {
+                systemInfo = newSystemInfo
+            }
         } catch {
             print("Failed to refresh system info: \(error)")
         }
