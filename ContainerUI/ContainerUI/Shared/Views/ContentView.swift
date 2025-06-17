@@ -7,15 +7,11 @@
 //
 
 import SwiftUI
-import ContainerModels
 
 struct ContentView: View {
     @Environment(ContainerService.self) private var containerService
     @State private var selectedTab: AppTab = .containers
-    @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
-    @State private var isInspectorPresented = true
-    @Environment(\.openWindow) private var openWindow
     
     var body: some View {
         NavigationSplitView {
@@ -29,81 +25,31 @@ struct ContentView: View {
             }
             .navigationTitle("Container UI")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
+        } detail: {
+            // Main Content Area
+            Group {
+                switch selectedTab {
+                case .containers:
+                    ContainerListView()
+                case .images:
+                    ImageListView()
+                case .system:
+                    SystemListView()
+                }
+            }
+            .navigationTitle(selectedTab.rawValue)
+            .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
             .toolbar {
-                ToolbarItemGroup(placement: .automatic) {
+                ToolbarItem(placement: .automatic) {
                     Button("New Container") {
                         showingNewContainerSheet = true
                     }
                     .buttonStyle(.borderedProminent)
                 }
             }
-        } detail: {
-            // Main Content Area
-            Group {
-                if selectedTab == .containers {
-                    ContainerListView(
-                        containers: containerService.containers,
-                        selectedItem: $selectedItem,
-                        onContainerAction: { action, container in
-                            handleContainerAction(action, container)
-                        }
-                    )
-                } else if selectedTab == .images {
-                    ImageListView(
-                        images: containerService.images,
-                        selectedItem: $selectedItem,
-                        onImageAction: { action, image in
-                            handleImageAction(action, image)
-                        }
-                    )
-                } else {
-                    SystemListView(
-                        selectedItem: $selectedItem
-                    )
-                }
-            }
-            .navigationTitle(selectedTab.rawValue)
-            .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
-            .toolbar {
-                ToolbarItemGroup(placement: .primaryAction) {
-                    // Inspector Toggle Button
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isInspectorPresented.toggle()
-                        }
-                    } label: {
-                        Label("Inspector", systemImage: "sidebar.trailing")
-                    }
-                    .help("Show Inspector")
-                }
-                
-                ToolbarItemGroup(placement: .status) {
-                    if containerService.isLoading {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-                }
-            }
-            .inspector(isPresented: $isInspectorPresented) {
-                // Inspector Content
-                InspectorView(
-                    selectedItem: selectedItem,
-                    selectedTab: selectedTab
-                )
-            }
         }
         .task {
             await refreshAll()
-        }
-        .alert("Error", isPresented: Binding(
-            get: { containerService.errorMessage != nil },
-            set: { _ in containerService.errorMessage = nil }
-        )) {
-            Button("OK") {
-                containerService.errorMessage = nil
-            }
-        } message: {
-            Text(containerService.errorMessage ?? "")
         }
         .sheet(isPresented: $showingNewContainerSheet) {
             NewContainerView()
@@ -114,84 +60,6 @@ struct ContentView: View {
         await containerService.refreshContainers()
         await containerService.refreshImages()
         await containerService.refreshSystemInfo()
-    }
-    
-    private func startContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.startContainer(container.containerID)
-                await containerService.refreshContainers()
-            } catch {
-                print("Failed to start container: \(error)")
-            }
-        }
-    }
-    
-    private func stopContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.stopContainer(container.containerID)
-                await containerService.refreshContainers()
-            } catch {
-                print("Failed to stop container: \(error)")
-            }
-        }
-    }
-    
-    private func deleteContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.deleteContainer(container.containerID)
-                await containerService.refreshContainers()
-            } catch {
-                print("Failed to delete container: \(error)")
-            }
-        }
-    }
-    
-    private func deleteImage(_ image: ContainerImage) {
-        Task { @MainActor in
-            do {
-                try await containerService.deleteImage(image.displayName)
-                await containerService.refreshImages()
-            } catch {
-                print("Failed to delete image: \(error)")
-            }
-        }
-    }
-    
-    private func handleContainerAction(_ action: String, _ container: Container) {
-        switch action {
-        case "start":
-            startContainer(container)
-        case "stop":
-            stopContainer(container)
-        case "delete":
-            deleteContainer(container)
-        case "logs":
-            let logSource = containerService.createContainerLogSource(for: container)
-            openWindow(id: "universal-logs", value: logSource.id)
-        default:
-            break
-        }
-    }
-    
-    private func handleImageAction(_ action: String, _ image: ContainerImage) {
-        switch action {
-        case "delete":
-            deleteImage(image)
-        case "create":
-            Task { @MainActor in
-                do {
-                    try await containerService.createAndRunContainer(image: image.displayName)
-                    await containerService.refreshContainers()
-                } catch {
-                    print("Failed to create container: \(error)")
-                }
-            }
-        default:
-            break
-        }
     }
 }
 
