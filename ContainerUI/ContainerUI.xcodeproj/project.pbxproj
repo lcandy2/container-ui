@@ -48,6 +48,7 @@
 		24322FFE2E000C5B0061A2C9 /* ContainerUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ContainerUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24681E582E01116000B35F5C /* ContainerXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = ContainerXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		24681E6E2E01119000B35F5C /* ContainerHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ContainerHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		24681E7C2E011D9B00B35F5C /* ContainerModels */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ContainerModels; path = Packages/ContainerModels; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -119,6 +120,7 @@
 		24322FF52E000C5A0061A2C9 = {
 			isa = PBXGroup;
 			children = (
+				24681E7C2E011D9B00B35F5C /* ContainerModels */,
 				243230002E000C5B0061A2C9 /* ContainerUI */,
 				24681E592E01116000B35F5C /* ContainerXPCService */,
 				24681E6F2E01119000B35F5C /* ContainerHelper */,
