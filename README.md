@@ -9,6 +9,8 @@ A native macOS SwiftUI application for managing containers using Apple's built-i
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-Native-green.svg)
 ![Development](https://img.shields.io/badge/Status-Active%20Development-yellow.svg)
 
+![CleanShot 2025-06-17 at 10 32 36@2x](https://github.com/user-attachments/assets/01fea8d4-0030-48eb-8c39-00903870d024)
+
 ## Features
 
 ### 🚢 Container Management
