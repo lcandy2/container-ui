@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct UniversalLogsWindow: View {
     let logSourceId: String
