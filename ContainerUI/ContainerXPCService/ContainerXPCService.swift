@@ -7,6 +7,10 @@
 //
 
 import Foundation
+import os.log
+
+// Create logger for XPC Service implementation
+private let serviceLogger = Logger(subsystem: "cc.citrons.ContainerXPCService", category: "Implementation")
 
 /// This object implements the protocol which we have defined. It provides the actual behavior for the service. It is 'exported' by the service to make it available to the process hosting the service over an NSXPCConnection.
 class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
@@ -30,6 +34,7 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
     // MARK: - Container Management
     
     func listContainers(reply: @escaping ([String: Any]) -> Void) {
+        serviceLogger.info("📋 XPC Service: listContainers called")
         Task {
             do {
                 try await ensureContainerSystemStarted()
@@ -40,8 +45,10 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
                     containerToDict(container)
                 }
                 
+                serviceLogger.info("✅ XPC Service: listContainers returning \(containers.count) containers")
                 reply(["containers": containersDict])
             } catch {
+                serviceLogger.error("❌ XPC Service: listContainers failed: \(error.localizedDescription)")
                 reply(["error": error.localizedDescription])
             }
         }

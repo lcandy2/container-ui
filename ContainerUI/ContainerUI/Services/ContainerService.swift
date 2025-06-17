@@ -8,6 +8,10 @@
 
 import Foundation
 internal import Combine
+import os.log
+
+// Create logger for main app XPC client
+private let xpcClientLogger = Logger(subsystem: "cc.citrons.ContainerUI", category: "XPCClient")
 
 // MARK: - XPC Service Protocol Reference
 // The actual protocol is defined in ContainerXPCService target
@@ -44,13 +48,16 @@ class ContainerService: ObservableObject {
     private let xpcService = ContainerXPCServiceManager()
     
     func refreshContainers() async {
+        xpcClientLogger.info("🔄 ContainerService: Starting container refresh")
         isLoading = true
         errorMessage = nil
         
         do {
             containers = try await xpcService.listContainers()
+            xpcClientLogger.info("✅ ContainerService: Container refresh completed successfully")
         } catch {
             errorMessage = "Failed to load containers: \(error.localizedDescription)"
+            xpcClientLogger.error("❌ ContainerService: Container refresh failed: \(error.localizedDescription)")
             print("Container list error: \(error)")
         }
         
@@ -216,29 +223,46 @@ class ContainerXPCServiceManager {
     }
     
     private func setupConnection() {
+        xpcClientLogger.info("🔌 Main App: Setting up XPC connection to cc.citrons.ContainerXPCService")
         connection = NSXPCConnection(serviceName: "cc.citrons.ContainerXPCService")
         connection?.remoteObjectInterface = NSXPCInterface(with: ContainerXPCServiceProtocol.self)
+        
+        connection?.interruptionHandler = {
+            xpcClientLogger.warning("🔌 Main App: XPC connection interrupted")
+        }
+        
+        connection?.invalidationHandler = {
+            xpcClientLogger.info("❌ Main App: XPC connection invalidated")
+        }
+        
         connection?.resume()
+        xpcClientLogger.info("✅ Main App: XPC connection established and resumed")
     }
     
     // MARK: - Container Management
     
     func listContainers() async throws -> [Container] {
+        xpcClientLogger.info("📋 Main App: Requesting container list from XPC service")
         guard let connection = connection else {
+            xpcClientLogger.error("❌ Main App: No XPC connection available")
             throw ContainerError.invalidOutput
         }
         
         return try await withCheckedThrowingContinuation { continuation in
             let service = connection.remoteObjectProxy as! ContainerXPCServiceProtocol
             service.listContainers { result in
+                xpcClientLogger.info("📨 Main App: Received response from XPC service")
                 if let containers = result["containers"] as? [[String: Any]] {
                     let parsedContainers = containers.compactMap { dict -> Container? in
                         self.parseContainerFromDict(dict)
                     }
+                    xpcClientLogger.info("✅ Main App: Successfully parsed \(parsedContainers.count) containers")
                     continuation.resume(returning: parsedContainers)
                 } else if let error = result["error"] as? String {
+                    xpcClientLogger.error("❌ Main App: XPC service returned error: \(error)")
                     continuation.resume(throwing: ContainerError.commandFailed(error))
                 } else {
+                    xpcClientLogger.warning("⚠️ Main App: XPC service returned unexpected response")
                     continuation.resume(returning: [])
                 }
             }
