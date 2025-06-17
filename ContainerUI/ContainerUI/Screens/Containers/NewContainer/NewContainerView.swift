@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct NewContainerView: View {
     @Environment(\.dismiss) private var dismiss

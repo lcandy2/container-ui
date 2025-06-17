@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct ImageRow: View {
     let image: ContainerImage

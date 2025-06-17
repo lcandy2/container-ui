@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct SystemListView: View {
     @Binding var selectedItem: SelectedItem?

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct SystemInspectorView: View {
     @ObservedObject var containerService: ContainerService

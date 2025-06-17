@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct SystemStatusCard: View {
     let systemInfo: SystemInfo?

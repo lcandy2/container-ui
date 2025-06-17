@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import ContainerModels
 
 enum SelectedItem: Hashable {
     case container(Container)

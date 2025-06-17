@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct ContentView: View {
     @StateObject private var containerService = ContainerService()

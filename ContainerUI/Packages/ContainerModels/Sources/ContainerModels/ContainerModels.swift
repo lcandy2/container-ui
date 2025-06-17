@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - Core Models
 
@@ -336,6 +337,7 @@ public struct DNSDomainData {
         return DNSDomain(domain: domain, isDefault: isDefault)
     }
 }
+
 
 // MARK: - Error Types
 
