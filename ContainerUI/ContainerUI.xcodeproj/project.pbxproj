@@ -57,11 +57,21 @@
 			);
 			target = 24681E572E01116000B35F5C /* ContainerXPCService */;
 		};
+		24681E782E01141500B35F5C /* Exceptions for "ContainerUI" folder in "ContainerUI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Application/CLAUDE.md,
+			);
+			target = 24322FFD2E000C5B0061A2C9 /* ContainerUI */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		243230002E000C5B0061A2C9 /* ContainerUI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				24681E782E01141500B35F5C /* Exceptions for "ContainerUI" folder in "ContainerUI" target */,
+			);
 			path = ContainerUI;
 			sourceTree = "<group>";
 		};
