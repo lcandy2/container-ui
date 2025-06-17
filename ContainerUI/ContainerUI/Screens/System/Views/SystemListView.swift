@@ -12,6 +12,7 @@ import ContainerModels
 struct SystemListView: View {
     @Binding var selectedItem: SelectedItem?
     @ObservedObject var containerService: ContainerService
+    let onRefresh: () -> Void
     
     var body: some View {
         VStack(spacing: 20) {
@@ -26,5 +27,13 @@ struct SystemListView: View {
             Spacer()
         }
         .padding()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Refresh") {
+                    onRefresh()
+                }
+                .buttonStyle(.bordered)
+            }
+        }
     }
 }

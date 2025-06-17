@@ -31,11 +31,6 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
             .toolbar {
                 ToolbarItemGroup(placement: .automatic) {
-                    Button("Refresh") {
-                        refreshAll()
-                    }
-                    .buttonStyle(.bordered)
-                    
                     Button("New Container") {
                         showingNewContainerSheet = true
                     }
@@ -51,6 +46,11 @@ struct ContentView: View {
                         selectedItem: $selectedItem,
                         onContainerAction: { action, container in
                             handleContainerAction(action, container)
+                        },
+                        onRefresh: {
+                            Task {
+                                await containerService.refreshContainers()
+                            }
                         }
                     )
                 } else if selectedTab == .images {
@@ -59,12 +59,22 @@ struct ContentView: View {
                         selectedItem: $selectedItem,
                         onImageAction: { action, image in
                             handleImageAction(action, image)
+                        },
+                        onRefresh: {
+                            Task {
+                                await containerService.refreshImages()
+                            }
                         }
                     )
                 } else {
                     SystemListView(
                         selectedItem: $selectedItem,
-                        containerService: containerService
+                        containerService: containerService,
+                        onRefresh: {
+                            Task {
+                                await containerService.refreshSystemInfo()
+                            }
+                        }
                     )
                 }
             }

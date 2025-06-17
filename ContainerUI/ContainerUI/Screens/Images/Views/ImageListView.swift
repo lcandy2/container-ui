@@ -13,6 +13,7 @@ struct ImageListView: View {
     let images: [ContainerImage]
     @Binding var selectedItem: SelectedItem?
     let onImageAction: (String, ContainerImage) -> Void
+    let onRefresh: () -> Void
     
     var body: some View {
         if images.isEmpty {
@@ -46,9 +47,17 @@ struct ImageListView: View {
                         
                         Button("Delete", systemImage: "trash", role: .destructive) {
                             onImageAction("delete", image)
-                        }
+                                            }
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Refresh") {
+                        onRefresh()
                     }
+                    .buttonStyle(.bordered)
+                }
             }
         }
     }
+}
 }

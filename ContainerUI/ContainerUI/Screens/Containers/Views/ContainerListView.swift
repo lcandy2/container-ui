@@ -13,6 +13,7 @@ struct ContainerListView: View {
     let containers: [Container]
     @Binding var selectedItem: SelectedItem?
     let onContainerAction: (String, Container) -> Void
+    let onRefresh: () -> Void
     
     var body: some View {
         if containers.isEmpty {
@@ -56,9 +57,17 @@ struct ContainerListView: View {
                         
                         Button("Delete", systemImage: "trash", role: .destructive) {
                             onContainerAction("delete", container)
-                        }
+                                            }
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Refresh") {
+                        onRefresh()
                     }
+                    .buttonStyle(.bordered)
+                }
             }
         }
     }
+}
 }
