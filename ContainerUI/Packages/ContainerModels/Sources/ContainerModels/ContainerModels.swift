@@ -96,16 +96,16 @@ public enum ContainerStatus: String, CaseIterable {
         }
     }
     
-    public var color: String {
+    public var color: Color {
         switch self {
         case .running:
-            return "green"
+            return .green
         case .stopped, .exited:
-            return "gray"
+            return .gray
         case .starting:
-            return "orange"
+            return .orange
         case .stopping:
-            return "orange"
+            return .orange
         }
     }
 }
