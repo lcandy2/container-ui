@@ -469,6 +469,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerBay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -510,6 +511,7 @@
 				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerBay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -538,7 +540,7 @@
 				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ContainerXPCService/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ContainerXPCService;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerBayXPCService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(CONTENTS_FOLDER_PATH)/XPCServices";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
@@ -561,7 +563,7 @@
 				CURRENT_PROJECT_VERSION = 2;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ContainerXPCService/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = ContainerXPCService;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerBayXPCService;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INSTALL_PATH = "$(CONTENTS_FOLDER_PATH)/XPCServices";
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
