@@ -14,6 +14,7 @@ struct ContentView: View {
     @State private var selectedTab: AppTab = .containers
     @State private var selectedItem: SelectedItem?
     @State private var showingNewContainerSheet = false
+    @State private var isInspectorPresented = false
     @Environment(\.openWindow) private var openWindow
     
     var body: some View {
@@ -42,7 +43,7 @@ struct ContentView: View {
                 }
             }
         } content: {
-            // Center Content
+            // Main Content Area
             Group {
                 if selectedTab == .containers {
                     ContainerListView(
@@ -68,41 +69,38 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(selectedTab.rawValue)
-            .navigationSplitViewColumnWidth(min: 300, ideal: 400, max: 600)
+            .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
             .toolbar {
-                if containerService.isLoading {
-                    ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    if containerService.isLoading {
                         ProgressView()
                             .scaleEffect(0.8)
                     }
+                    
+                    // Inspector Toggle Button
+                    Button {
+                        isInspectorPresented.toggle()
+                    } label: {
+                        Label("Inspector", systemImage: "sidebar.trailing")
+                    }
+                    .help("Show Inspector")
                 }
             }
-        } detail: {
-            // Right Inspector
-            if let selectedItem = selectedItem {
-                switch selectedItem {
-                case .container(let container):
-                    ContainerInspectorView(
-                        container: container,
-                        containerService: containerService
-                    )
-                case .image(let image):
-                    ImageInspectorView(
-                        image: image,
-                        containerService: containerService
-                    )
-                case .system:
-                    SystemInspectorView(
-                        containerService: containerService
-                    )
-                }
-            } else {
-                ContentUnavailableView(
-                    "Select an Item",
-                    systemImage: selectedTab.systemImage,
-                    description: Text(selectedTab == .system ? "System management and configuration" : "Choose a \(selectedTab.rawValue.lowercased().dropLast()) to see details and actions")
+            .inspector(isPresented: $isInspectorPresented) {
+                // Inspector Content
+                InspectorView(
+                    selectedItem: selectedItem,
+                    selectedTab: selectedTab,
+                    containerService: containerService
                 )
             }
+        } detail: {
+            // Detail view for when no inspector is used
+            ContentUnavailableView(
+                "Welcome to Container UI",
+                systemImage: "shippingbox.fill",
+                description: Text("Select items from the sidebar and use the inspector to view details and perform actions.")
+            )
         }
         .task {
             await refreshAll()
