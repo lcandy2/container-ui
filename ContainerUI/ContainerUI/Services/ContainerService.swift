@@ -650,15 +650,36 @@ class ContainerXPCServiceManager {
         
         let reference = dict["reference"] as? String ?? "\(name):\(tag)"
         let digest = dict["digest"] as? String ?? ""
-        let created = dict["created"] as? String
+        
+        // Parse registry and repository from reference or name
+        let registry: String
+        let repository: String
+        
+        if reference.contains("/") {
+            let parts = reference.split(separator: "/", maxSplits: 1)
+            if parts.count == 2 {
+                registry = String(parts[0])
+                repository = String(parts[1]).split(separator: ":").first.map(String.init) ?? name
+            } else {
+                registry = "docker.io"
+                repository = name
+            }
+        } else {
+            registry = "docker.io"
+            repository = name
+        }
+        
+        let mediaType = dict["mediaType"] as? String ?? "application/vnd.docker.distribution.manifest.v2+json"
         
         return ContainerImage(
             name: name,
             tag: tag,
-            reference: reference,
             digest: digest,
-            size: size,
-            created: created
+            reference: reference,
+            registry: registry,
+            repository: repository,
+            mediaType: mediaType,
+            size: size
         )
     }
     
