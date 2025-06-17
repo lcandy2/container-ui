@@ -9,6 +9,7 @@
 import Foundation
 internal import Combine
 import os.log
+import ContainerModels
 
 // Create logger for main app XPC client
 private let xpcClientLogger = Logger(subsystem: "cc.citrons.ContainerUI", category: "XPCClient")
@@ -720,21 +721,3 @@ class ContainerXPCServiceManager {
     }
 }
 
-// MARK: - Error Types
-
-enum ContainerError: LocalizedError {
-    case commandFailed(String)
-    case containerNotFound
-    case invalidOutput
-    
-    var errorDescription: String? {
-        switch self {
-        case .commandFailed(let message):
-            return "Command failed: \(message)"
-        case .containerNotFound:
-            return "Container not found"
-        case .invalidOutput:
-            return "Invalid command output"
-        }
-    }
-}

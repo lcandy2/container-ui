@@ -9,10 +9,19 @@
 /* Begin PBXBuildFile section */
 		24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		24681E7B2E011BD200B35F5C /* ContainerXPCService.xpc in Resources */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; };
+		24681E7F2E011EE000B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E7E2E011EE000B35F5C /* ContainerModels */; };
+		24681E812E011EE700B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E802E011EE700B35F5C /* ContainerModels */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		24681E622E01116000B35F5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 24322FF62E000C5A0061A2C9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 24681E572E01116000B35F5C;
+			remoteInfo = ContainerXPCService;
+		};
+		24681E822E011EE700B35F5C /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 24322FF62E000C5A0061A2C9 /* Project object */;
 			proxyType = 1;
@@ -97,6 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24681E812E011EE700B35F5C /* ContainerModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -104,6 +114,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24681E7F2E011EE000B35F5C /* ContainerModels in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +135,7 @@
 				243230002E000C5B0061A2C9 /* ContainerUI */,
 				24681E592E01116000B35F5C /* ContainerXPCService */,
 				24681E6F2E01119000B35F5C /* ContainerHelper */,
+				24681E7D2E011EE000B35F5C /* Frameworks */,
 				24322FFF2E000C5B0061A2C9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -136,6 +148,13 @@
 				24681E6E2E01119000B35F5C /* ContainerHelper */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		24681E7D2E011EE000B35F5C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -154,12 +173,14 @@
 			);
 			dependencies = (
 				24681E632E01116000B35F5C /* PBXTargetDependency */,
+				24681E832E011EE700B35F5C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				243230002E000C5B0061A2C9 /* ContainerUI */,
 			);
 			name = ContainerUI;
 			packageProductDependencies = (
+				24681E802E011EE700B35F5C /* ContainerModels */,
 			);
 			productName = ContainerUI;
 			productReference = 24322FFE2E000C5B0061A2C9 /* ContainerUI.app */;
@@ -182,6 +203,7 @@
 			);
 			name = ContainerXPCService;
 			packageProductDependencies = (
+				24681E7E2E011EE000B35F5C /* ContainerModels */,
 			);
 			productName = ContainerXPCService;
 			productReference = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */;
@@ -298,6 +320,11 @@
 			isa = PBXTargetDependency;
 			target = 24681E572E01116000B35F5C /* ContainerXPCService */;
 			targetProxy = 24681E622E01116000B35F5C /* PBXContainerItemProxy */;
+		};
+		24681E832E011EE700B35F5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 24681E572E01116000B35F5C /* ContainerXPCService */;
+			targetProxy = 24681E822E011EE700B35F5C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -610,6 +637,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		24681E7E2E011EE000B35F5C /* ContainerModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContainerModels;
+		};
+		24681E802E011EE700B35F5C /* ContainerModels */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ContainerModels;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 24322FF62E000C5A0061A2C9 /* Project object */;
 }

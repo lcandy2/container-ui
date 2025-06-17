@@ -8,6 +8,7 @@
 
 import Foundation
 import os.log
+import ContainerModels
 
 // Create logger for XPC Service implementation
 private let serviceLogger = Logger(subsystem: "cc.citrons.ContainerUI.ContainerXPCService", category: "Implementation")
@@ -400,7 +401,26 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
         do {
             let containerJSONList = try JSONDecoder().decode([ContainerJSONData].self, from: data)
             serviceLogger.info("✅ XPC Service: Successfully parsed \(containerJSONList.count) containers")
-            return containerJSONList.map { $0.toContainerData() }
+            return containerJSONList.map { containerJSON in
+                let container = containerJSON.toContainer()
+                return ContainerData(
+                    containerID: container.containerID,
+                    name: container.name,
+                    image: container.image,
+                    imageReference: container.imageReference,
+                    imageDigest: container.imageDigest,
+                    hostname: container.hostname,
+                    status: container.status.rawValue,
+                    os: container.os,
+                    arch: container.arch,
+                    cpus: container.cpus,
+                    memoryInBytes: container.memoryInBytes,
+                    networks: container.networks.map { network in
+                        NetworkData(hostname: network.hostname, address: network.address, gateway: network.gateway, network: network.network)
+                    },
+                    rosetta: container.rosetta
+                )
+            }
         } catch {
             serviceLogger.error("❌ XPC Service: JSON parsing error: \(error)")
             serviceLogger.error("🔍 XPC Service: Failed to parse JSON: '\(trimmedOutput)'")
@@ -427,7 +447,17 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
         do {
             let imageJSONList = try JSONDecoder().decode([ImageJSONData].self, from: data)
             serviceLogger.info("✅ XPC Service: Successfully parsed \(imageJSONList.count) images")
-            return imageJSONList.map { $0.toImageData() }
+            return imageJSONList.map { imageJSON in
+                let image = imageJSON.toContainerImage()
+                return ImageData(
+                    name: image.name,
+                    tag: image.tag,
+                    reference: image.reference,
+                    digest: image.digest,
+                    size: image.size,
+                    created: nil
+                )
+            }
         } catch {
             serviceLogger.error("❌ XPC Service: Image JSON parsing error: \(error)")
             serviceLogger.error("🔍 XPC Service: Failed to parse image JSON: '\(trimmedOutput)'")
@@ -548,106 +578,7 @@ struct DNSDomainData {
     let isDefault: Bool
 }
 
-// MARK: - JSON Parsing Models
-
-struct ContainerJSONData: Codable {
-    let id: String
-    let status: String
-    let networks: [NetworkJSONData]?
-    let configuration: ConfigurationData
-    
-    struct ConfigurationData: Codable {
-        let hostname: String
-        let platform: PlatformData
-        let image: ImageRefData
-        let resources: ResourcesData
-        let rosetta: Bool
-        
-        struct PlatformData: Codable {
-            let architecture: String
-            let os: String
-        }
-        
-        struct ImageRefData: Codable {
-            let reference: String
-        }
-        
-        struct ResourcesData: Codable {
-            let cpus: Int
-            let memoryInBytes: Int64
-        }
-    }
-    
-    func toContainerData() -> ContainerData {
-        // Extract name from image reference or use hostname
-        let imageRef = configuration.image.reference
-        let imageParts = imageRef.split(separator: "/").last?.split(separator: ":") ?? []
-        let imageName = imageParts.first.map(String.init) ?? imageRef
-        let name = configuration.hostname
-        
-        return ContainerData(
-            containerID: id,
-            name: name,
-            image: imageName,
-            imageReference: imageRef,
-            imageDigest: "", // Not provided in this format
-            hostname: configuration.hostname,
-            status: status,
-            os: configuration.platform.os,
-            arch: configuration.platform.architecture,
-            cpus: configuration.resources.cpus,
-            memoryInBytes: configuration.resources.memoryInBytes,
-            networks: networks?.map { $0.toNetworkData() } ?? [],
-            rosetta: configuration.rosetta
-        )
-    }
-}
-
-struct NetworkJSONData: Codable {
-    let hostname: String?
-    let address: String
-    let gateway: String
-    let network: String
-    
-    func toNetworkData() -> NetworkData {
-        return NetworkData(
-            hostname: hostname,
-            address: address,
-            gateway: gateway,
-            network: network
-        )
-    }
-}
-
-struct ImageJSONData: Codable {
-    let reference: String
-    let descriptor: DescriptorData
-    
-    struct DescriptorData: Codable {
-        let mediaType: String
-        let digest: String
-        let size: Int64
-    }
-    
-    func toImageData() -> ImageData {
-        // Parse name and tag from reference like "docker.io/library/alpine:latest"
-        let parts = reference.split(separator: "/")
-        let nameWithTag = parts.last?.description ?? reference
-        let nameTagParts = nameWithTag.split(separator: ":")
-        
-        let name = nameTagParts.first.map(String.init) ?? reference
-        let tag = nameTagParts.count > 1 ? String(nameTagParts[1]) : "latest"
-        
-        return ImageData(
-            name: name,
-            tag: tag,
-            reference: reference,
-            digest: descriptor.digest,
-            size: descriptor.size,
-            created: nil // Not provided in this format
-        )
-    }
-}
+// MARK: - Local Data Models for XPC Transfer
 
 // MARK: - Error Types
 
