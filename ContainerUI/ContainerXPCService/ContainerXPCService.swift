@@ -127,12 +127,12 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
     
     // MARK: - Log Operations
     
-    func getContainerLogs(_ containerID: String, lines: Int?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void) {
+    func getContainerLogs(_ containerID: String, lines: NSNumber?, follow: Bool, reply: @escaping ([String: Any]) -> Void) {
         Task {
             do {
                 var args = [containerCommand, "logs"]
                 if let lines = lines {
-                    args.append(contentsOf: ["-n", "\(lines)"])
+                    args.append(contentsOf: ["-n", "\(lines.intValue)"])
                 }
                 if follow {
                     args.append("-f")
@@ -140,21 +140,21 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
                 args.append(containerID)
                 
                 let logs = try await executeCommand(args)
-                reply(.success(logs))
+                reply(["logs": logs])
             } catch {
-                reply(.failure(error))
+                reply(["error": error.localizedDescription])
             }
         }
     }
     
-    func getContainerBootLogs(_ containerID: String, reply: @escaping (Result<String, Error>) -> Void) {
+    func getContainerBootLogs(_ containerID: String, reply: @escaping ([String: Any]) -> Void) {
         Task {
             do {
                 let args = [containerCommand, "logs", "--boot", containerID]
                 let logs = try await executeCommand(args)
-                reply(.success(logs))
+                reply(["logs": logs])
             } catch {
-                reply(.failure(error))
+                reply(["error": error.localizedDescription])
             }
         }
     }
@@ -206,7 +206,7 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
         }
     }
     
-    func getSystemLogs(timeFilter: String?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void) {
+    func getSystemLogs(timeFilter: String?, follow: Bool, reply: @escaping ([String: Any]) -> Void) {
         Task {
             do {
                 var args = [containerCommand, "system", "logs"]
@@ -218,9 +218,9 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
                 }
                 
                 let logs = try await executeCommand(args)
-                reply(.success(logs))
+                reply(["logs": logs])
             } catch {
-                reply(.failure(error))
+                reply(["error": error.localizedDescription])
             }
         }
     }

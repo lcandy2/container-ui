@@ -21,15 +21,15 @@ import Foundation
     func createAndRunContainer(image: String, name: String?, reply: @escaping (Error?) -> Void)
     
     // MARK: - Log Operations
-    func getContainerLogs(_ containerID: String, lines: Int?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void)
-    func getContainerBootLogs(_ containerID: String, reply: @escaping (Result<String, Error>) -> Void)
+    func getContainerLogs(_ containerID: String, lines: NSNumber?, follow: Bool, reply: @escaping ([String: Any]) -> Void)
+    func getContainerBootLogs(_ containerID: String, reply: @escaping ([String: Any]) -> Void)
     
     // MARK: - System Management
     func getSystemStatus(reply: @escaping ([String: Any]) -> Void)
     func startSystem(reply: @escaping (Error?) -> Void)
     func stopSystem(reply: @escaping (Error?) -> Void)
     func restartSystem(reply: @escaping (Error?) -> Void)
-    func getSystemLogs(timeFilter: String?, follow: Bool, reply: @escaping (Result<String, Error>) -> Void)
+    func getSystemLogs(timeFilter: String?, follow: Bool, reply: @escaping ([String: Any]) -> Void)
     
     // MARK: - DNS Management
     func listDNSDomains(reply: @escaping ([String: Any]) -> Void)
