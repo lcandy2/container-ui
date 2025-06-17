@@ -11,7 +11,6 @@ import SwiftUI
 struct ContentView: View {
     @Environment(ContainerService.self) private var containerService
     @State private var selectedTab: AppTab = .containers
-    @State private var showingNewContainerSheet = false
     
     var body: some View {
         NavigationSplitView {
@@ -39,20 +38,9 @@ struct ContentView: View {
             }
             .navigationTitle(selectedTab.rawValue)
             .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button("New Container") {
-                        showingNewContainerSheet = true
-                    }
-                    .buttonStyle(.borderedProminent)
-                }
-            }
         }
         .task {
             await refreshAll()
-        }
-        .sheet(isPresented: $showingNewContainerSheet) {
-            NewContainerView()
         }
     }
     
