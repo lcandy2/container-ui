@@ -6,9 +6,58 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		24681E622E01116000B35F5C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 24322FF62E000C5A0061A2C9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 24681E572E01116000B35F5C;
+			remoteInfo = ContainerXPCService;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		24681E692E01116000B35F5C /* Embed XPC Services */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/XPCServices";
+			dstSubfolderSpec = 16;
+			files = (
+				24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */,
+			);
+			name = "Embed XPC Services";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24681E6C2E01119000B35F5C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		24322FFE2E000C5B0061A2C9 /* ContainerUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ContainerUI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24681E582E01116000B35F5C /* ContainerXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = ContainerXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
+		24681E6E2E01119000B35F5C /* ContainerHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ContainerHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		24681E652E01116000B35F5C /* Exceptions for "ContainerXPCService" folder in "ContainerXPCService" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 24681E572E01116000B35F5C /* ContainerXPCService */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		243230002E000C5B0061A2C9 /* ContainerUI */ = {
@@ -16,10 +65,37 @@
 			path = ContainerUI;
 			sourceTree = "<group>";
 		};
+		24681E592E01116000B35F5C /* ContainerXPCService */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				24681E652E01116000B35F5C /* Exceptions for "ContainerXPCService" folder in "ContainerXPCService" target */,
+			);
+			path = ContainerXPCService;
+			sourceTree = "<group>";
+		};
+		24681E6F2E01119000B35F5C /* ContainerHelper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ContainerHelper;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		24322FFB2E000C5B0061A2C9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24681E552E01116000B35F5C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24681E6B2E01119000B35F5C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +109,8 @@
 			isa = PBXGroup;
 			children = (
 				243230002E000C5B0061A2C9 /* ContainerUI */,
+				24681E592E01116000B35F5C /* ContainerXPCService */,
+				24681E6F2E01119000B35F5C /* ContainerHelper */,
 				24322FFF2E000C5B0061A2C9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +119,8 @@
 			isa = PBXGroup;
 			children = (
 				24322FFE2E000C5B0061A2C9 /* ContainerUI.app */,
+				24681E582E01116000B35F5C /* ContainerXPCService.xpc */,
+				24681E6E2E01119000B35F5C /* ContainerHelper */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +135,12 @@
 				24322FFA2E000C5B0061A2C9 /* Sources */,
 				24322FFB2E000C5B0061A2C9 /* Frameworks */,
 				24322FFC2E000C5B0061A2C9 /* Resources */,
+				24681E692E01116000B35F5C /* Embed XPC Services */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				24681E632E01116000B35F5C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				243230002E000C5B0061A2C9 /* ContainerUI */,
@@ -70,6 +152,50 @@
 			productReference = 24322FFE2E000C5B0061A2C9 /* ContainerUI.app */;
 			productType = "com.apple.product-type.application";
 		};
+		24681E572E01116000B35F5C /* ContainerXPCService */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 24681E662E01116000B35F5C /* Build configuration list for PBXNativeTarget "ContainerXPCService" */;
+			buildPhases = (
+				24681E542E01116000B35F5C /* Sources */,
+				24681E552E01116000B35F5C /* Frameworks */,
+				24681E562E01116000B35F5C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				24681E592E01116000B35F5C /* ContainerXPCService */,
+			);
+			name = ContainerXPCService;
+			packageProductDependencies = (
+			);
+			productName = ContainerXPCService;
+			productReference = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */;
+			productType = "com.apple.product-type.xpc-service";
+		};
+		24681E6D2E01119000B35F5C /* ContainerHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 24681E722E01119000B35F5C /* Build configuration list for PBXNativeTarget "ContainerHelper" */;
+			buildPhases = (
+				24681E6A2E01119000B35F5C /* Sources */,
+				24681E6B2E01119000B35F5C /* Frameworks */,
+				24681E6C2E01119000B35F5C /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				24681E6F2E01119000B35F5C /* ContainerHelper */,
+			);
+			name = ContainerHelper;
+			packageProductDependencies = (
+			);
+			productName = ContainerHelper;
+			productReference = 24681E6E2E01119000B35F5C /* ContainerHelper */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -77,11 +203,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					24322FFD2E000C5B0061A2C9 = {
 						CreatedOnToolsVersion = 26.0;
+					};
+					24681E572E01116000B35F5C = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					24681E6D2E01119000B35F5C = {
+						CreatedOnToolsVersion = 16.4;
 					};
 				};
 			};
@@ -100,12 +232,21 @@
 			projectRoot = "";
 			targets = (
 				24322FFD2E000C5B0061A2C9 /* ContainerUI */,
+				24681E572E01116000B35F5C /* ContainerXPCService */,
+				24681E6D2E01119000B35F5C /* ContainerHelper */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		24322FFC2E000C5B0061A2C9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24681E562E01116000B35F5C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -122,7 +263,29 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		24681E542E01116000B35F5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		24681E6A2E01119000B35F5C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		24681E632E01116000B35F5C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 24681E572E01116000B35F5C /* ContainerXPCService */;
+			targetProxy = 24681E622E01116000B35F5C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		243230072E000C5D0061A2C9 /* Debug */ = {
@@ -273,7 +436,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "cc.citrons.container-ui";
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -314,13 +477,79 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "cc.citrons.container-ui";
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		24681E672E01116000B35F5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ContainerXPCService/ContainerXPCService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ContainerXPCService/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerXPCService;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI.ContainerXPCService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		24681E682E01116000B35F5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ContainerXPCService/ContainerXPCService.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ContainerXPCService/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ContainerXPCService;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI.ContainerXPCService;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		24681E732E01119000B35F5C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI.ContainerHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		24681E742E01119000B35F5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 15.5;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.citrons.ContainerUI.ContainerHelper;
+				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
@@ -342,6 +571,24 @@
 			buildConfigurations = (
 				2432300A2E000C5D0061A2C9 /* Debug */,
 				2432300B2E000C5D0061A2C9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		24681E662E01116000B35F5C /* Build configuration list for PBXNativeTarget "ContainerXPCService" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24681E672E01116000B35F5C /* Debug */,
+				24681E682E01116000B35F5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		24681E722E01119000B35F5C /* Build configuration list for PBXNativeTarget "ContainerHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				24681E732E01119000B35F5C /* Debug */,
+				24681E742E01119000B35F5C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
