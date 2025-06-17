@@ -178,6 +178,15 @@ public enum SystemServiceStatus {
             return "Stopped"
         }
     }
+    
+    public var color: Color {
+        switch self {
+        case .running:
+            return .green
+        case .stopped:
+            return .gray
+        }
+    }
 }
 
 public struct SystemInfo {
@@ -195,12 +204,12 @@ public struct SystemInfo {
 // MARK: - JSON Parsing Models for Apple Container CLI
 
 public struct ContainerJSONData: Codable {
-    public let id: String
     public let status: String
     public let networks: [NetworkJSONData]?
     public let configuration: ConfigurationData
     
     public struct ConfigurationData: Codable {
+        public let id: String
         public let hostname: String
         public let platform: PlatformData
         public let image: ImageRefData
@@ -241,7 +250,7 @@ public struct ContainerJSONData: Codable {
         }
         
         return Container(
-            containerID: id,
+            containerID: configuration.id,
             name: name,
             image: imageName,
             imageReference: imageRef,

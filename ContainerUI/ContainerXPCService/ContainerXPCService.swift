@@ -38,7 +38,6 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
         serviceLogger.info("📋 XPC Service: listContainers called")
         Task {
             do {
-                try await ensureContainerSystemStarted()
                 let output = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
                 let containers = try parseContainerList(output)
                 
@@ -303,23 +302,6 @@ class ContainerXPCService: NSObject, ContainerXPCServiceProtocol {
     
     // MARK: - Helper Methods
     
-    private func ensureContainerSystemStarted() async throws {
-        serviceLogger.info("🔧 XPC Service: Checking if container system is running")
-        // Check if system is already running by trying a simple command
-        do {
-            let output = try await executeCommand([containerCommand, "ls", "-a", "--format", "json"])
-            serviceLogger.info("✅ XPC Service: Container system is already running")
-            serviceLogger.debug("📄 XPC Service: Test output: \(output)")
-        } catch {
-            // If list fails, try starting the system
-            serviceLogger.warning("⚠️ XPC Service: Container system not running, attempting to start...")
-            _ = try await executeCommand([containerCommand, "system", "start"])
-            
-            // Wait a moment for system to initialize
-            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
-            serviceLogger.info("✅ XPC Service: Container system start command completed")
-        }
-    }
     
     private func executeCommand(_ arguments: [String]) async throws -> String {
         serviceLogger.info("🚀 XPC Service: Executing command: \(arguments.joined(separator: " "))")
