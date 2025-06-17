@@ -48,7 +48,7 @@ struct ContentView: View {
                             handleContainerAction(action, container)
                         },
                         onRefresh: {
-                            Task {
+                            Task { @MainActor in
                                 await containerService.refreshContainers()
                             }
                         }
@@ -61,7 +61,7 @@ struct ContentView: View {
                             handleImageAction(action, image)
                         },
                         onRefresh: {
-                            Task {
+                            Task { @MainActor in
                                 await containerService.refreshImages()
                             }
                         }
@@ -70,7 +70,7 @@ struct ContentView: View {
                     SystemListView(
                         selectedItem: $selectedItem,
                         onRefresh: {
-                            Task {
+                            Task { @MainActor in
                                 await containerService.refreshSystemInfo()
                             }
                         }
@@ -81,18 +81,22 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
-                    if containerService.isLoading {
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    }
-                    
                     // Inspector Toggle Button
                     Button {
-                        isInspectorPresented.toggle()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isInspectorPresented.toggle()
+                        }
                     } label: {
                         Label("Inspector", systemImage: "sidebar.trailing")
                     }
                     .help("Show Inspector")
+                }
+                
+                ToolbarItemGroup(placement: .status) {
+                    if containerService.isLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                    }
                 }
             }
             .inspector(isPresented: $isInspectorPresented) {
@@ -128,7 +132,7 @@ struct ContentView: View {
     }
     
     private func startContainer(_ container: Container) {
-        Task {
+        Task { @MainActor in
             do {
                 try await containerService.startContainer(container.containerID)
                 await containerService.refreshContainers()
@@ -139,7 +143,7 @@ struct ContentView: View {
     }
     
     private func stopContainer(_ container: Container) {
-        Task {
+        Task { @MainActor in
             do {
                 try await containerService.stopContainer(container.containerID)
                 await containerService.refreshContainers()
@@ -150,7 +154,7 @@ struct ContentView: View {
     }
     
     private func deleteContainer(_ container: Container) {
-        Task {
+        Task { @MainActor in
             do {
                 try await containerService.deleteContainer(container.containerID)
                 await containerService.refreshContainers()
@@ -161,7 +165,7 @@ struct ContentView: View {
     }
     
     private func deleteImage(_ image: ContainerImage) {
-        Task {
+        Task { @MainActor in
             do {
                 try await containerService.deleteImage(image.displayName)
                 await containerService.refreshImages()
@@ -192,7 +196,7 @@ struct ContentView: View {
         case "delete":
             deleteImage(image)
         case "create":
-            Task {
+            Task { @MainActor in
                 do {
                     try await containerService.createAndRunContainer(image: image.displayName)
                     await containerService.refreshContainers()
