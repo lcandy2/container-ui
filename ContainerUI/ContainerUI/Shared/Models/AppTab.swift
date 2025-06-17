@@ -16,7 +16,7 @@ enum AppTab: String, CaseIterable {
     var systemImage: String {
         switch self {
         case .containers: return "shippingbox"
-        case .images: return "disc"
+        case .images: return "externaldrive"
         case .system: return "gearshape"
         }
     }

@@ -38,7 +38,7 @@ struct ImageRow: View {
                     .fontWeight(.medium)
                 
                 HStack(spacing: 4) {
-                    Image(systemName: "disc")
+                    Image(systemName: "externaldrive")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                     

@@ -21,7 +21,7 @@ struct ImageListView: View {
             if containerService.images.isEmpty {
                 ContentUnavailableView(
                     "No Images",
-                    systemImage: "disc",
+                    systemImage: "externaldrive",
                     description: Text("Pull an image to get started")
                 )
             } else {
@@ -76,7 +76,7 @@ struct ImageListView: View {
             } else {
                 ContentUnavailableView(
                     "No Image Selected",
-                    systemImage: "disc",
+                    systemImage: "externaldrive",
                     description: Text("Select an image to view details")
                 )
             }
