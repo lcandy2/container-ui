@@ -10,7 +10,7 @@ import Foundation
 import os.log
 
 // Create logger for XPC Service
-let xpcLogger = Logger(subsystem: "cc.citrons.ContainerXPCService", category: "XPCService")
+let xpcLogger = Logger(subsystem: "cc.citrons.ContainerUI.ContainerXPCService", category: "XPCService")
 
 class ServiceDelegate: NSObject, NSXPCListenerDelegate {
     

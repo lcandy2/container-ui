@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		24681E7B2E011BD200B35F5C /* ContainerXPCService.xpc in Resources */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -253,6 +254,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24681E7B2E011BD200B35F5C /* ContainerXPCService.xpc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

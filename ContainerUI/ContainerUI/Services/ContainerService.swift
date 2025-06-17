@@ -223,8 +223,8 @@ class ContainerXPCServiceManager {
     }
     
     private func setupConnection() {
-        xpcClientLogger.info("🔌 Main App: Setting up XPC connection to cc.citrons.ContainerXPCService")
-        connection = NSXPCConnection(serviceName: "cc.citrons.ContainerXPCService")
+        xpcClientLogger.info("🔌 Main App: Setting up XPC connection to cc.citrons.ContainerUI.ContainerXPCService")
+        connection = NSXPCConnection(serviceName: "cc.citrons.ContainerUI.ContainerXPCService")
         connection?.remoteObjectInterface = NSXPCInterface(with: ContainerXPCServiceProtocol.self)
         
         connection?.interruptionHandler = {
@@ -249,8 +249,16 @@ class ContainerXPCServiceManager {
         }
         
         return try await withCheckedThrowingContinuation { continuation in
+            // Add timeout to prevent hanging
+            let timeoutTask = Task {
+                try await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+                xpcClientLogger.error("⏰ Main App: XPC call timed out")
+                continuation.resume(throwing: ContainerError.commandFailed("XPC Service connection timed out"))
+            }
+            
             let service = connection.remoteObjectProxy as! ContainerXPCServiceProtocol
             service.listContainers { result in
+                timeoutTask.cancel()
                 xpcClientLogger.info("📨 Main App: Received response from XPC service")
                 if let containers = result["containers"] as? [[String: Any]] {
                     let parsedContainers = containers.compactMap { dict -> Container? in

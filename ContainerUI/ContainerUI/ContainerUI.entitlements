@@ -12,7 +12,7 @@
 	<true/>
 	<key>com.apple.security.xpc.service.allow</key>
 	<array>
-		<string>cc.citrons.ContainerXPCService</string>
+		<string>cc.citrons.ContainerUI.ContainerXPCService</string>
 	</array>
 </dict>
 </plist>
