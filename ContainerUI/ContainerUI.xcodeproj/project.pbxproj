@@ -10,6 +10,7 @@
 		24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		24681E7F2E011EE000B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E7E2E011EE000B35F5C /* ContainerModels */; };
 		24681E812E011EE700B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E802E011EE700B35F5C /* ContainerModels */; };
+		24CB04292E0259B300766010 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 24CB04282E0259B300766010 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +97,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				24681E812E011EE700B35F5C /* ContainerModels in Frameworks */,
+				24CB04292E0259B300766010 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -170,6 +172,7 @@
 			name = ContainerUI;
 			packageProductDependencies = (
 				24681E802E011EE700B35F5C /* ContainerModels */,
+				24CB04282E0259B300766010 /* Sparkle */,
 			);
 			productName = ContainerUI;
 			productReference = 24322FFE2E000C5B0061A2C9 /* ContainerUI.app */;
@@ -250,6 +253,9 @@
 			);
 			mainGroup = 24322FF52E000C5A0061A2C9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				24CB04272E0259B300766010 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 24322FFF2E000C5B0061A2C9 /* Products */;
 			projectDirPath = "";
@@ -628,6 +634,17 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		24CB04272E0259B300766010 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		24681E7E2E011EE000B35F5C /* ContainerModels */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -636,6 +653,11 @@
 		24681E802E011EE700B35F5C /* ContainerModels */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ContainerModels;
+		};
+		24CB04282E0259B300766010 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 24CB04272E0259B300766010 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
