@@ -21,7 +21,7 @@ struct ImageListView: View {
             // Check if system is stopped
             if containerService.systemInfo?.serviceStatus == .stopped {
                 ContentUnavailableView {
-                    Label("Container System is Not Running", systemImage: "server.rack")
+                    Label("Container System Stopped", systemImage: "server.rack")
                 } actions: {
                     Button("Turn On") {
                         Task {
