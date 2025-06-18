@@ -6,24 +6,27 @@
 //  Copyright © 2025 https://github.com/lcandy2. All Rights Reserved.
 //
 
-import SwiftUI
-import ContainerModels
 import ButtonKit
+import ContainerModels
+import SwiftUI
 
 struct ContainerListView: View {
     @Environment(ContainerService.self) private var containerService
     @Environment(\.openWindow) private var openWindow
-    
+
     @State private var selectedContainer: Container?
     @State private var isInspectorPresented = true
     @State private var errorMessage: String?
-    
+
     var body: some View {
         Group {
             // Check if system is stopped
             if containerService.systemInfo?.serviceStatus == .stopped {
                 ContentUnavailableView {
-                    Label("Container System Stopped", systemImage: "server.rack")
+                    Label(
+                        "Container System Stopped",
+                        systemImage: "server.rack"
+                    )
                 } actions: {
                     AsyncButton {
                         try await containerService.startSystem()
@@ -35,46 +38,60 @@ struct ContainerListView: View {
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.overlay)
                 }
-            } else if containerService.containers.isEmpty {
-                ContentUnavailableView(
-                    "No Containers",
-                    systemImage: "shippingbox",
-                    description: Text("Create a container to get started")
-                )
             } else {
-                List(containerService.containers, id: \.id, selection: $selectedContainer) { container in
-                    ContainerRow(container: container)
-                        .tag(container)
-                        .contextMenu {
-                            AsyncButton {
-                                try await startContainer(container)
-                            } label: {
-                                Label("Start", systemImage: "play.fill")
-                            }
-                            .disabled(container.status == .running)
-                            .asyncButtonStyle(.none)
-                            
-                            AsyncButton {
-                                try await stopContainer(container)
-                            } label: {
-                                Label("Stop", systemImage: "stop.fill")
-                            }
-                            .disabled(container.status != .running)
-                            .asyncButtonStyle(.none)
-                            
-                            Button("View Logs", systemImage: "doc.text") {
-                                showLogs(for: container)
-                            }
-                            
-                            Divider()
-                            
-                            AsyncButton {
-                                try await deleteContainer(container)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            .asyncButtonStyle(.none)
+                Group {
+                    if containerService.containers.isEmpty {
+                        ContentUnavailableView(
+                            "No Containers",
+                            systemImage: "shippingbox",
+                            description: Text(
+                                "Create a container to get started"
+                            )
+                        )
+                    } else {
+                        List(
+                            containerService.containers,
+                            id: \.id,
+                            selection: $selectedContainer
+                        ) { container in
+                            ContainerRow(container: container)
+                                .tag(container)
+                                .contextMenu {
+                                    AsyncButton {
+                                        try await startContainer(container)
+                                    } label: {
+                                        Label("Start", systemImage: "play.fill")
+                                    }
+                                    .disabled(container.status == .running)
+                                    .asyncButtonStyle(.none)
+
+                                    AsyncButton {
+                                        try await stopContainer(container)
+                                    } label: {
+                                        Label("Stop", systemImage: "stop.fill")
+                                    }
+                                    .disabled(container.status != .running)
+                                    .asyncButtonStyle(.none)
+
+                                    Button("View Logs", systemImage: "doc.text")
+                                    {
+                                        showLogs(for: container)
+                                    }
+
+                                    Divider()
+
+                                    AsyncButton {
+                                        try await deleteContainer(container)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                    .asyncButtonStyle(.none)
+                                }
                         }
+                    }
+                }
+                .task {
+                    await containerService.refreshContainers()
                 }
             }
         }
@@ -94,7 +111,7 @@ struct ContainerListView: View {
                     .buttonStyle(.bordered)
                 }
             }
-            
+
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -107,20 +124,25 @@ struct ContainerListView: View {
             }
         }
         .inspector(isPresented: $isInspectorPresented) {
-            if let selectedContainer = selectedContainer {
-                ContainerInspectorView(container: selectedContainer)
-            } else {
-                ContentUnavailableView(
-                    "No Container Selected",
-                    systemImage: "shippingbox",
-                    description: Text("Select a container to view details")
-                )
+            Group {
+                if let selectedContainer = selectedContainer {
+                    ContainerInspectorView(container: selectedContainer)
+                } else {
+                    ContentUnavailableView(
+                        "No Container Selected",
+                        systemImage: "shippingbox",
+                        description: Text("Select a container to view details")
+                    )
+                }
             }
         }
-        .alert("Error", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { _ in errorMessage = nil }
-        )) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { _ in errorMessage = nil }
+            )
+        ) {
             Button("OK") {
                 errorMessage = nil
             }
@@ -128,19 +150,19 @@ struct ContainerListView: View {
             Text(errorMessage ?? "")
         }
     }
-    
+
     // MARK: - Container Actions
-    
+
     private func startContainer(_ container: Container) async throws {
         try await containerService.startContainer(container.containerID)
         await containerService.refreshContainers()
     }
-    
+
     private func stopContainer(_ container: Container) async throws {
         try await containerService.stopContainer(container.containerID)
         await containerService.refreshContainers()
     }
-    
+
     private func deleteContainer(_ container: Container) async throws {
         try await containerService.deleteContainer(container.containerID)
         await containerService.refreshContainers()
@@ -149,9 +171,11 @@ struct ContainerListView: View {
             selectedContainer = nil
         }
     }
-    
+
     private func showLogs(for container: Container) {
-        let logSource = containerService.createContainerLogSource(for: container)
+        let logSource = containerService.createContainerLogSource(
+            for: container
+        )
         openWindow(id: "universal-logs", value: logSource.id)
     }
 }

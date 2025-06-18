@@ -8,6 +8,7 @@
 
 import SwiftUI
 import ContainerModels
+import ButtonKit
 
 struct ImageListView: View {
     @Environment(ContainerService.self) private var containerService
@@ -23,18 +24,15 @@ struct ImageListView: View {
                 ContentUnavailableView {
                     Label("Container System Stopped", systemImage: "server.rack")
                 } actions: {
-                    Button("Turn On") {
-                        Task {
-                            do {
-                                try await containerService.startSystem()
-                                await containerService.refreshSystemInfo()
-                                await containerService.refreshImages()
-                            } catch {
-                                errorMessage = "Failed to start system: \(error.localizedDescription)"
-                            }
-                        }
+                    AsyncButton {
+                        try await containerService.startSystem()
+                        await containerService.refreshSystemInfo()
+                        await containerService.refreshImages()
+                    } label: {
+                        Text("Turn On")
                     }
                     .buttonStyle(.borderedProminent)
+                    .asyncButtonStyle(.overlay)
                 }
             } else if containerService.images.isEmpty {
                 ContentUnavailableView(
@@ -47,27 +45,40 @@ struct ImageListView: View {
                     ImageRow(image: image)
                         .tag(image)
                         .contextMenu {
-                            Button("Create Container", systemImage: "plus.rectangle") {
-                                createContainer(from: image)
+                            AsyncButton {
+                                try await createContainer(from: image)
+                            } label: {
+                                Label("Create Container", systemImage: "plus.rectangle")
                             }
+                            .asyncButtonStyle(.none)
                             
                             Divider()
                             
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                deleteImage(image)
+                            AsyncButton {
+                                try await deleteImage(image)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                            .asyncButtonStyle(.none)
                         }
                 }
             }
         }
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                Button("Refresh") {
-                    Task { @MainActor in
-                        await containerService.refreshImages()
+                if containerService.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                } else {
+                    Button {
+                        Task {
+                            await containerService.refreshImages()
+                        }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
                     }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
             }
             
             ToolbarItemGroup(placement: .primaryAction) {
@@ -79,13 +90,6 @@ struct ImageListView: View {
                     Label("Inspector", systemImage: "sidebar.trailing")
                 }
                 .help("Show Inspector")
-            }
-            
-            ToolbarItemGroup(placement: .status) {
-                if containerService.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
             }
         }
         .inspector(isPresented: $isInspectorPresented) {
@@ -113,29 +117,17 @@ struct ImageListView: View {
     
     // MARK: - Image Actions
     
-    private func createContainer(from image: ContainerImage) {
-        Task { @MainActor in
-            do {
-                try await containerService.createAndRunContainer(image: image.displayName)
-                await containerService.refreshContainers()
-            } catch {
-                errorMessage = "Failed to create container: \(error.localizedDescription)"
-            }
-        }
+    private func createContainer(from image: ContainerImage) async throws {
+        try await containerService.createAndRunContainer(image: image.displayName)
+        await containerService.refreshContainers()
     }
     
-    private func deleteImage(_ image: ContainerImage) {
-        Task { @MainActor in
-            do {
-                try await containerService.deleteImage(image.displayName)
-                await containerService.refreshImages()
-                // Clear selection if deleted image was selected
-                if selectedImage?.id == image.id {
-                    selectedImage = nil
-                }
-            } catch {
-                errorMessage = "Failed to delete image: \(error.localizedDescription)"
-            }
+    private func deleteImage(_ image: ContainerImage) async throws {
+        try await containerService.deleteImage(image.displayName)
+        await containerService.refreshImages()
+        // Clear selection if deleted image was selected
+        if selectedImage?.id == image.id {
+            selectedImage = nil
         }
     }
 }

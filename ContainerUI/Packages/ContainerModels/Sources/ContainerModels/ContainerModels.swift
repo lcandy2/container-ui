@@ -46,7 +46,7 @@ public struct Container: Identifiable, Hashable {
     // Computed properties for display
     public var displayName: String {
         // Use hostname if different from containerID, otherwise use first 12 chars of ID
-        hostname != containerID ? hostname : String(containerID.prefix(12))
+        hostname != containerID ? hostname : String(containerID)
     }
     
     public var primaryAddress: String? {
