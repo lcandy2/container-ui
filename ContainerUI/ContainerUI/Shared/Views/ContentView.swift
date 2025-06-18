@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import ContainerModels
 
 struct ContentView: View {
     @Environment(ContainerService.self) private var containerService
@@ -30,10 +31,39 @@ struct ContentView: View {
                 
                 List(selection: $selectedTab) {
                     NavigationLink(value: AppTab.system) {
-                        Label(AppTab.system.rawValue, systemImage: AppTab.system.systemImage)
+                        HStack {
+                            Image(systemName: AppTab.system.systemImage)
+                                .frame(width: 16, height: 16)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(AppTab.system.rawValue)
+                                    .font(.body)
+                                
+                                HStack(spacing: 4) {
+                                    // System status indicator
+                                    if let systemInfo = containerService.systemInfo {
+                                        Circle()
+                                            .fill(systemInfo.serviceStatus.color)
+                                            .frame(width: 6, height: 6)
+                                        Text(systemInfo.serviceStatus.displayName)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        Circle()
+                                            .fill(Color.gray)
+                                            .frame(width: 6, height: 6)
+                                        Text("Loading...")
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                        }
                     }
                 }
-                .frame(height: 44)
+                .frame(height: 56)
                 .scrollDisabled(true)
             }
             .navigationTitle("Container UI")
