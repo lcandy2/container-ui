@@ -24,7 +24,6 @@ struct SystemListView: View {
                     SystemStatusCard(systemInfo: containerService.systemInfo)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
-                        .contentTransition(.numericText())
                 }
                 
                 // System Controls Section
@@ -61,7 +60,6 @@ struct SystemListView: View {
                         Task { await refreshSystemInfo() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
-                            .rotationEffect(.degrees(isRefreshing ? 360 : 0))
                     }
                     .disabled(isRefreshing)
                 }
@@ -87,39 +85,37 @@ struct SystemListView: View {
     // MARK: - System Controls Content
     
     private var systemControlsContent: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                Button {
-                    Task { await performSystemAction { 
-                        try await containerService.startSystem()
-                    }}
-                } label: {
-                    Label("Start System", systemImage: "play.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(containerService.systemInfo?.serviceStatus == .running)
-                
-                Button {
-                    Task { await performSystemAction { 
-                        try await containerService.stopSystem()
-                    }}
-                } label: {
-                    Label("Stop System", systemImage: "stop.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .disabled(containerService.systemInfo?.serviceStatus != .running)
+        HStack(spacing: 8) {
+            Button {
+                Task { await performSystemAction { 
+                    try await containerService.startSystem()
+                }}
+            } label: {
+                Label("Start", systemImage: "play.circle.fill")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(containerService.systemInfo?.serviceStatus == .running)
+            
+            Button {
+                Task { await performSystemAction { 
+                    try await containerService.stopSystem()
+                }}
+            } label: {
+                Label("Stop", systemImage: "stop.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled(containerService.systemInfo?.serviceStatus != .running)
             
             Button {
                 Task { await performSystemAction { 
                     try await containerService.restartSystem()
                 }}
             } label: {
-                Label("Restart System", systemImage: "arrow.clockwise.circle.fill")
+                Label("Restart", systemImage: "arrow.clockwise.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -225,15 +221,9 @@ struct SystemListView: View {
     // MARK: - Helper Methods
     
     private func refreshSystemInfo() async {
-        withAnimation(.easeInOut(duration: 0.4)) {
-            isRefreshing = true
-        }
-        
+        isRefreshing = true
         await containerService.refreshSystemInfo()
-        
-        withAnimation(.easeInOut(duration: 0.4).delay(0.1)) {
-            isRefreshing = false
-        }
+        isRefreshing = false
     }
     
     private func performSystemAction(_ action: () async throws -> Void) async {

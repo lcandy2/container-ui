@@ -11,25 +11,21 @@ import ContainerModels
 
 struct SystemStatusCard: View {
     let systemInfo: SystemInfo?
-    @State private var isAnimated = false
     
     var body: some View {
         VStack(spacing: 0) {
             // Header Section
             HStack(alignment: .center, spacing: 16) {
-                // Status Icon with animated background
+                // Status Icon
                 ZStack {
                     Circle()
-                        .fill(statusBackgroundColor.gradient)
+                        .fill(statusBackgroundColor)
                         .frame(width: 52, height: 52)
-                        .scaleEffect(isAnimated ? 1.05 : 1.0)
-                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimated)
                     
                     Image(systemName: statusIconName)
                         .font(.title2)
                         .fontWeight(.medium)
                         .foregroundStyle(.white)
-                        .symbolEffect(.pulse, isActive: systemInfo?.serviceStatus == .running)
                 }
                 
                 VStack(alignment: .leading, spacing: 4) {
@@ -110,8 +106,6 @@ struct SystemStatusCard: View {
                                 .truncationMode(.middle)
                         }
                     }
-                    
-                    // Uptime or additional info could be added here
                 }
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
@@ -146,7 +140,6 @@ struct SystemStatusCard: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 20)
                 .padding(.top, 12)
-                .redacted(reason: .placeholder)
             }
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -156,11 +149,6 @@ struct SystemStatusCard: View {
         )
         .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
         .shadow(color: .black.opacity(0.08), radius: 1, x: 0, y: 1)
-        .onAppear {
-            withAnimation(.easeInOut(duration: 0.6).delay(0.1)) {
-                isAnimated = true
-            }
-        }
     }
     
     // MARK: - Computed Properties
@@ -197,13 +185,8 @@ struct SystemStatusCard: View {
     
     private var statusIndicator: some View {
         Circle()
-            .fill(statusColor.gradient)
+            .fill(statusColor)
             .frame(width: 8, height: 8)
-            .overlay(
-                Circle()
-                    .strokeBorder(.white.opacity(0.3), lineWidth: 1)
-            )
-            .shadow(color: statusColor.opacity(0.3), radius: 2, x: 0, y: 1)
     }
     
     private var statusText: String {
