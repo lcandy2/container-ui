@@ -96,7 +96,7 @@ struct SystemListView: View {
     // MARK: - System Controls Content
     
     private var systemControlsContent: some View {
-        HStack(spacing: 8) {
+        HStack {
             AsyncButton {
                 try await containerService.startSystem()
                 await containerService.refreshSystemInfo()
@@ -132,7 +132,7 @@ struct SystemListView: View {
             .controlSize(.large)
             .asyncButtonStyle(.overlay)
         }
-        .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+        .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
     }
     
     // MARK: - DNS Management Content
