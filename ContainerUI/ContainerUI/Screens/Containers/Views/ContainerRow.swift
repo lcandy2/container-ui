@@ -33,14 +33,28 @@ struct ContainerRow: View {
             Spacer()
             
             VStack(alignment: .trailing, spacing: 2) {
-                HStack {
-                    Circle()
-                        .fill(container.status.color)
-                        .frame(width: 8, height: 8)
-                    
-                    Text(container.status.displayName)
-                        .font(.caption)
-                        .fontWeight(.medium)
+                // Show progress or stable status
+                if container.status.isInProgress {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .scaleEffect(0.8)
+                        
+                        Text(container.status.progressMessage)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundStyle(container.status.color)
+                    }
+                } else {
+                    HStack {
+                        Circle()
+                            .fill(container.status.color)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(container.status.displayName)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
                 }
                 
                 Text("\(container.cpus) CPU • \(container.memoryDisplay)")

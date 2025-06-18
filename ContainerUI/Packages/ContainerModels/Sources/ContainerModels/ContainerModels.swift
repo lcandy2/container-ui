@@ -108,6 +108,44 @@ public enum ContainerStatus: String, CaseIterable {
             return .orange
         }
     }
+    
+    // MARK: - Progress Properties
+    
+    /// Indicates if the container is in a transitional state requiring progress indication
+    public var isInProgress: Bool {
+        switch self {
+        case .starting, .stopping:
+            return true
+        case .running, .stopped, .exited:
+            return false
+        }
+    }
+    
+    /// Progress message to display when isInProgress is true
+    public var progressMessage: String {
+        switch self {
+        case .starting:
+            return "Starting..."
+        case .stopping:
+            return "Stopping..."
+        default:
+            return displayName
+        }
+    }
+    
+    /// Icon for stable states (when not in progress)
+    public var stableIcon: String {
+        switch self {
+        case .running:
+            return "checkmark.circle.fill"
+        case .stopped:
+            return "stop.circle.fill"
+        case .exited:
+            return "xmark.circle.fill"
+        default:
+            return "circle.fill"
+        }
+    }
 }
 
 public struct ContainerImage: Identifiable, Hashable {

@@ -107,10 +107,56 @@ class ContainerService {
     }
     
     func startContainer(_ containerID: String) async throws {
+        // Immediately update container status to starting
+        await MainActor.run {
+            if let index = containers.firstIndex(where: { $0.containerID == containerID }) {
+                var updatedContainer = containers[index]
+                // Create a new Container with starting status
+                containers[index] = Container(
+                    containerID: updatedContainer.containerID,
+                    name: updatedContainer.name,
+                    image: updatedContainer.image,
+                    imageReference: updatedContainer.imageReference,
+                    imageDigest: updatedContainer.imageDigest,
+                    hostname: updatedContainer.hostname,
+                    status: .starting,
+                    os: updatedContainer.os,
+                    arch: updatedContainer.arch,
+                    cpus: updatedContainer.cpus,
+                    memoryInBytes: updatedContainer.memoryInBytes,
+                    networks: updatedContainer.networks,
+                    rosetta: updatedContainer.rosetta
+                )
+            }
+        }
+        
         try await xpcService.startContainer(containerID)
     }
     
     func stopContainer(_ containerID: String) async throws {
+        // Immediately update container status to stopping
+        await MainActor.run {
+            if let index = containers.firstIndex(where: { $0.containerID == containerID }) {
+                var updatedContainer = containers[index]
+                // Create a new Container with stopping status
+                containers[index] = Container(
+                    containerID: updatedContainer.containerID,
+                    name: updatedContainer.name,
+                    image: updatedContainer.image,
+                    imageReference: updatedContainer.imageReference,
+                    imageDigest: updatedContainer.imageDigest,
+                    hostname: updatedContainer.hostname,
+                    status: .stopping,
+                    os: updatedContainer.os,
+                    arch: updatedContainer.arch,
+                    cpus: updatedContainer.cpus,
+                    memoryInBytes: updatedContainer.memoryInBytes,
+                    networks: updatedContainer.networks,
+                    rosetta: updatedContainer.rosetta
+                )
+            }
+        }
+        
         try await xpcService.stopContainer(containerID)
     }
     

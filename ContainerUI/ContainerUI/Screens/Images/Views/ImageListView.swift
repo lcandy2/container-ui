@@ -6,23 +6,26 @@
 //  Copyright © 2025 https://github.com/lcandy2. All Rights Reserved.
 //
 
-import SwiftUI
-import ContainerModels
 import ButtonKit
+import ContainerModels
+import SwiftUI
 
 struct ImageListView: View {
     @Environment(ContainerService.self) private var containerService
-    
+
     @State private var selectedImage: ContainerImage?
     @State private var isInspectorPresented = true
     @State private var errorMessage: String?
-    
+
     var body: some View {
         Group {
             // Check if system is stopped
             if containerService.systemInfo?.serviceStatus == .stopped {
                 ContentUnavailableView {
-                    Label("Container System Stopped", systemImage: "server.rack")
+                    Label(
+                        "Container System Stopped",
+                        systemImage: "server.rack"
+                    )
                 } actions: {
                     AsyncButton {
                         try await containerService.startSystem()
@@ -34,33 +37,47 @@ struct ImageListView: View {
                     .buttonStyle(.borderedProminent)
                     .asyncButtonStyle(.overlay)
                 }
-            } else if containerService.images.isEmpty {
-                ContentUnavailableView(
-                    "No Images",
-                    systemImage: "externaldrive",
-                    description: Text("Pull an image to get started")
-                )
             } else {
-                List(containerService.images, id: \.id, selection: $selectedImage) { image in
-                    ImageRow(image: image)
-                        .tag(image)
-                        .contextMenu {
-                            AsyncButton {
-                                try await createContainer(from: image)
-                            } label: {
-                                Label("Create Container", systemImage: "plus.rectangle")
-                            }
-                            .asyncButtonStyle(.none)
-                            
-                            Divider()
-                            
-                            AsyncButton {
-                                try await deleteImage(image)
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
-                            .asyncButtonStyle(.none)
+                Group {
+                    if containerService.images.isEmpty {
+                        ContentUnavailableView(
+                            "No Images",
+                            systemImage: "externaldrive",
+                            description: Text("Pull an image to get started")
+                        )
+                    } else {
+                        List(
+                            containerService.images,
+                            id: \.id,
+                            selection: $selectedImage
+                        ) { image in
+                            ImageRow(image: image)
+                                .tag(image)
+                                .contextMenu {
+                                    AsyncButton {
+                                        try await createContainer(from: image)
+                                    } label: {
+                                        Label(
+                                            "Create Container",
+                                            systemImage: "plus.rectangle"
+                                        )
+                                    }
+                                    .asyncButtonStyle(.none)
+
+                                    Divider()
+
+                                    AsyncButton {
+                                        try await deleteImage(image)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                    .asyncButtonStyle(.none)
+                                }
                         }
+                    }
+                }
+                .task {
+                    await containerService.refreshImages()
                 }
             }
         }
@@ -80,7 +97,7 @@ struct ImageListView: View {
                     .buttonStyle(.bordered)
                 }
             }
-            
+
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -103,10 +120,13 @@ struct ImageListView: View {
                 )
             }
         }
-        .alert("Error", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { _ in errorMessage = nil }
-        )) {
+        .alert(
+            "Error",
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { _ in errorMessage = nil }
+            )
+        ) {
             Button("OK") {
                 errorMessage = nil
             }
@@ -114,14 +134,16 @@ struct ImageListView: View {
             Text(errorMessage ?? "")
         }
     }
-    
+
     // MARK: - Image Actions
-    
+
     private func createContainer(from image: ContainerImage) async throws {
-        try await containerService.createAndRunContainer(image: image.displayName)
+        try await containerService.createAndRunContainer(
+            image: image.displayName
+        )
         await containerService.refreshContainers()
     }
-    
+
     private func deleteImage(_ image: ContainerImage) async throws {
         try await containerService.deleteImage(image.displayName)
         await containerService.refreshImages()
