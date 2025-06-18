@@ -15,12 +15,26 @@ struct ContentView: View {
     var body: some View {
         NavigationSplitView {
             // Left Sidebar
-            List(selection: $selectedTab) {
-                ForEach(AppTab.allCases, id: \.self) { tab in
-                    NavigationLink(value: tab) {
-                        Label(tab.rawValue, systemImage: tab.systemImage)
+            VStack(spacing: 0) {
+                // Main navigation list
+                List(selection: $selectedTab) {
+                    ForEach([AppTab.containers, AppTab.images], id: \.self) { tab in
+                        NavigationLink(value: tab) {
+                            Label(tab.rawValue, systemImage: tab.systemImage)
+                        }
                     }
                 }
+                
+                // Bottom section for system
+                Divider()
+                
+                List(selection: $selectedTab) {
+                    NavigationLink(value: AppTab.system) {
+                        Label(AppTab.system.rawValue, systemImage: AppTab.system.systemImage)
+                    }
+                }
+                .frame(height: 44)
+                .scrollDisabled(true)
             }
             .navigationTitle("Container UI")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
