@@ -11,6 +11,7 @@
 		24681E7F2E011EE000B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E7E2E011EE000B35F5C /* ContainerModels */; };
 		24681E812E011EE700B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E802E011EE700B35F5C /* ContainerModels */; };
 		24CB04292E0259B300766010 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 24CB04282E0259B300766010 /* Sparkle */; };
+		24CB04762E027B8D00766010 /* ButtonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 24CB04752E027B8D00766010 /* ButtonKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +97,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24CB04762E027B8D00766010 /* ButtonKit in Frameworks */,
 				24681E812E011EE700B35F5C /* ContainerModels in Frameworks */,
 				24CB04292E0259B300766010 /* Sparkle in Frameworks */,
 			);
@@ -173,6 +175,7 @@
 			packageProductDependencies = (
 				24681E802E011EE700B35F5C /* ContainerModels */,
 				24CB04282E0259B300766010 /* Sparkle */,
+				24CB04752E027B8D00766010 /* ButtonKit */,
 			);
 			productName = ContainerUI;
 			productReference = 24322FFE2E000C5B0061A2C9 /* ContainerUI.app */;
@@ -255,6 +258,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				24CB04272E0259B300766010 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				24CB04742E027B8D00766010 /* XCRemoteSwiftPackageReference "ButtonKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 24322FFF2E000C5B0061A2C9 /* Products */;
@@ -643,6 +647,14 @@
 				minimumVersion = 2.7.1;
 			};
 		};
+		24CB04742E027B8D00766010 /* XCRemoteSwiftPackageReference "ButtonKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Dean151/ButtonKit";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.6.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -658,6 +670,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 24CB04272E0259B300766010 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		24CB04752E027B8D00766010 /* ButtonKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 24CB04742E027B8D00766010 /* XCRemoteSwiftPackageReference "ButtonKit" */;
+			productName = ButtonKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
