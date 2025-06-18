@@ -66,7 +66,6 @@ struct ContentView: View {
                 .frame(height: 56)
                 .scrollDisabled(true)
             }
-            .navigationTitle("Container UI")
             .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 250)
         } detail: {
             // Main Content Area
@@ -84,14 +83,8 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 400, ideal: 600, max: .infinity)
         }
         .task {
-            await refreshAll()
+            await containerService.refreshSystemInfo()
         }
-    }
-    
-    private func refreshAll() async {
-        await containerService.refreshContainers()
-        await containerService.refreshImages()
-        await containerService.refreshSystemInfo()
     }
 }
 

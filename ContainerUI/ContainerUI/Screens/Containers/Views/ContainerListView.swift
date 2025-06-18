@@ -80,13 +80,19 @@ struct ContainerListView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                AsyncButton {
-                    await containerService.refreshContainers()
-                } label: {
-                    Text("Refresh")
+                if containerService.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                } else {
+                    Button {
+                        Task {
+                            await containerService.refreshContainers()
+                        }
+                    } label: {
+                        Label("Refresh", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.bordered)
-                .asyncButtonStyle(.none)
             }
             
             ToolbarItemGroup(placement: .primaryAction) {
@@ -98,13 +104,6 @@ struct ContainerListView: View {
                     Label("Inspector", systemImage: "sidebar.trailing")
                 }
                 .help("Show Inspector")
-            }
-            
-            ToolbarItemGroup(placement: .status) {
-                if containerService.isLoading {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
             }
         }
         .inspector(isPresented: $isInspectorPresented) {

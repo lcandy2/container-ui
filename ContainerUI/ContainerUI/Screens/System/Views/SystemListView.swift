@@ -62,12 +62,6 @@ struct SystemListView: View {
                         Image(systemName: "arrow.clockwise")
                     }
                     .asyncButtonStyle(.none)
-                    
-                    Button {
-                        showingInspector.toggle()
-                    } label: {
-                        Image(systemName: "sidebar.right")
-                    }
                 }
             }
             .alert("Add DNS Domain", isPresented: $showingAddDomainAlert) {
@@ -89,6 +83,15 @@ struct SystemListView: View {
             }
             .inspector(isPresented: $showingInspector) {
                 SystemInspectorView()
+                    .toolbar {
+                        ToolbarItemGroup {
+                            Button {
+                                showingInspector.toggle()
+                            } label: {
+                                Image(systemName: "sidebar.right")
+                            }
+                        }
+                    }
             }
         }
     }
