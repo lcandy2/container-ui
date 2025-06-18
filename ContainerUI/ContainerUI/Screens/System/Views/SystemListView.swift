@@ -8,13 +8,14 @@
 
 import SwiftUI
 import ContainerModels
+import ButtonKit
 
 struct SystemListView: View {
     @Environment(ContainerService.self) private var containerService
     @Environment(\.openWindow) private var openWindow
     @State private var newDomainName = ""
     @State private var showingAddDomainAlert = false
-    @State private var isRefreshing = false
+
     @State private var showingInspector = true
     
     var body: some View {
@@ -55,12 +56,12 @@ struct SystemListView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button {
-                        Task { await refreshSystemInfo() }
+                    AsyncButton {
+                        await refreshSystemInfo()
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .disabled(isRefreshing)
+                    .asyncButtonStyle(.none)
                     
                     Button {
                         showingInspector.toggle()
@@ -77,8 +78,10 @@ struct SystemListView: View {
                     newDomainName = ""
                 }
                 
-                Button("Add") {
-                    Task { await addDNSDomain() }
+                AsyncButton {
+                    try await addDNSDomain()
+                } label: {
+                    Text("Add")
                 }
                 .disabled(newDomainName.isEmpty || !isValidDomain(newDomainName))
             } message: {
@@ -94,40 +97,40 @@ struct SystemListView: View {
     
     private var systemControlsContent: some View {
         HStack(spacing: 8) {
-            Button {
-                Task { await performSystemAction { 
-                    try await containerService.startSystem()
-                }}
+            AsyncButton {
+                try await containerService.startSystem()
+                await containerService.refreshSystemInfo()
             } label: {
                 Label("Start", systemImage: "play.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            .asyncButtonStyle(.overlay)
             .disabled(containerService.systemInfo?.serviceStatus == .running)
             
-            Button {
-                Task { await performSystemAction { 
-                    try await containerService.stopSystem()
-                }}
+            AsyncButton {
+                try await containerService.stopSystem()
+                await containerService.refreshSystemInfo()
             } label: {
                 Label("Stop", systemImage: "stop.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+            .asyncButtonStyle(.overlay)
             .disabled(containerService.systemInfo?.serviceStatus != .running)
             
-            Button {
-                Task { await performSystemAction { 
-                    try await containerService.restartSystem()
-                }}
+            AsyncButton {
+                try await containerService.restartSystem()
+                await containerService.refreshSystemInfo()
             } label: {
                 Label("Restart", systemImage: "arrow.clockwise.circle.fill")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
+            .asyncButtonStyle(.overlay)
         }
         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
     }
@@ -223,46 +226,23 @@ struct SystemListView: View {
     // MARK: - Helper Methods
     
     private func refreshSystemInfo() async {
-        isRefreshing = true
         await containerService.refreshSystemInfo()
-        isRefreshing = false
     }
     
-    private func performSystemAction(_ action: () async throws -> Void) async {
-        do {
-            try await action()
-            await containerService.refreshSystemInfo()
-        } catch {
-            print("System action failed: \(error)")
-        }
+    private func addDNSDomain() async throws {
+        try await containerService.createDNSDomain(newDomainName)
+        await containerService.refreshSystemInfo()
+        newDomainName = ""
     }
     
-    private func addDNSDomain() async {
-        do {
-            try await containerService.createDNSDomain(newDomainName)
-            await containerService.refreshSystemInfo()
-            newDomainName = ""
-        } catch {
-            print("Failed to create domain: \(error)")
-        }
+    private func setDefaultDomain(_ domain: String) async throws {
+        try await containerService.setDefaultDNSDomain(domain)
+        await containerService.refreshSystemInfo()
     }
     
-    private func setDefaultDomain(_ domain: String) async {
-        do {
-            try await containerService.setDefaultDNSDomain(domain)
-            await containerService.refreshSystemInfo()
-        } catch {
-            print("Failed to set default domain: \(error)")
-        }
-    }
-    
-    private func deleteDomain(_ domain: String) async {
-        do {
-            try await containerService.deleteDNSDomain(domain)
-            await containerService.refreshSystemInfo()
-        } catch {
-            print("Failed to delete domain: \(error)")
-        }
+    private func deleteDomain(_ domain: String) async throws {
+        try await containerService.deleteDNSDomain(domain)
+        await containerService.refreshSystemInfo()
     }
     
     private func isValidDomain(_ domain: String) -> Bool {
