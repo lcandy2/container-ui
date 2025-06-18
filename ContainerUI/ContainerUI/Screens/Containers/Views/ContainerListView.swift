@@ -8,6 +8,7 @@
 
 import SwiftUI
 import ContainerModels
+import ButtonKit
 
 struct ContainerListView: View {
     @Environment(ContainerService.self) private var containerService
@@ -24,18 +25,15 @@ struct ContainerListView: View {
                 ContentUnavailableView {
                     Label("Container System Stopped", systemImage: "server.rack")
                 } actions: {
-                    Button("Turn On") {
-                        Task {
-                            do {
-                                try await containerService.startSystem()
-                                await containerService.refreshSystemInfo()
-                                await containerService.refreshContainers()
-                            } catch {
-                                errorMessage = "Failed to start system: \(error.localizedDescription)"
-                            }
-                        }
+                    AsyncButton {
+                        try await containerService.startSystem()
+                        await containerService.refreshSystemInfo()
+                        await containerService.refreshContainers()
+                    } label: {
+                        Text("Turn On")
                     }
                     .buttonStyle(.borderedProminent)
+                    .asyncButtonStyle(.overlay)
                 }
             } else if containerService.containers.isEmpty {
                 ContentUnavailableView(
@@ -48,15 +46,21 @@ struct ContainerListView: View {
                     ContainerRow(container: container)
                         .tag(container)
                         .contextMenu {
-                            Button("Start", systemImage: "play.fill") {
-                                startContainer(container)
+                            AsyncButton {
+                                try await startContainer(container)
+                            } label: {
+                                Label("Start", systemImage: "play.fill")
                             }
                             .disabled(container.status == .running)
+                            .asyncButtonStyle(.none)
                             
-                            Button("Stop", systemImage: "stop.fill") {
-                                stopContainer(container)
+                            AsyncButton {
+                                try await stopContainer(container)
+                            } label: {
+                                Label("Stop", systemImage: "stop.fill")
                             }
                             .disabled(container.status != .running)
+                            .asyncButtonStyle(.none)
                             
                             Button("View Logs", systemImage: "doc.text") {
                                 showLogs(for: container)
@@ -64,21 +68,25 @@ struct ContainerListView: View {
                             
                             Divider()
                             
-                            Button("Delete", systemImage: "trash", role: .destructive) {
-                                deleteContainer(container)
+                            AsyncButton {
+                                try await deleteContainer(container)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
+                            .asyncButtonStyle(.none)
                         }
                 }
             }
         }
         .toolbar {
             ToolbarItemGroup(placement: .automatic) {
-                Button("Refresh") {
-                    Task { @MainActor in
-                        await containerService.refreshContainers()
-                    }
+                AsyncButton {
+                    await containerService.refreshContainers()
+                } label: {
+                    Text("Refresh")
                 }
                 .buttonStyle(.bordered)
+                .asyncButtonStyle(.none)
             }
             
             ToolbarItemGroup(placement: .primaryAction) {
@@ -124,40 +132,22 @@ struct ContainerListView: View {
     
     // MARK: - Container Actions
     
-    private func startContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.startContainer(container.containerID)
-                await containerService.refreshContainers()
-            } catch {
-                errorMessage = "Failed to start container: \(error.localizedDescription)"
-            }
-        }
+    private func startContainer(_ container: Container) async throws {
+        try await containerService.startContainer(container.containerID)
+        await containerService.refreshContainers()
     }
     
-    private func stopContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.stopContainer(container.containerID)
-                await containerService.refreshContainers()
-            } catch {
-                errorMessage = "Failed to stop container: \(error.localizedDescription)"
-            }
-        }
+    private func stopContainer(_ container: Container) async throws {
+        try await containerService.stopContainer(container.containerID)
+        await containerService.refreshContainers()
     }
     
-    private func deleteContainer(_ container: Container) {
-        Task { @MainActor in
-            do {
-                try await containerService.deleteContainer(container.containerID)
-                await containerService.refreshContainers()
-                // Clear selection if deleted container was selected
-                if selectedContainer?.id == container.id {
-                    selectedContainer = nil
-                }
-            } catch {
-                errorMessage = "Failed to delete container: \(error.localizedDescription)"
-            }
+    private func deleteContainer(_ container: Container) async throws {
+        try await containerService.deleteContainer(container.containerID)
+        await containerService.refreshContainers()
+        // Clear selection if deleted container was selected
+        if selectedContainer?.id == container.id {
+            selectedContainer = nil
         }
     }
     
