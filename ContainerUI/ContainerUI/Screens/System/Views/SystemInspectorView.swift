@@ -23,11 +23,9 @@ struct SystemInspectorView: View {
                     }
                 }
             }
-            .padding(.vertical)
-            .frame(maxWidth: .infinity)
-            
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
         }
-        .frame(maxWidth: .infinity)
     }
 }
 

@@ -25,6 +25,7 @@ struct SystemListView: View {
                     SystemStatusCard(systemInfo: containerService.systemInfo)
                         .listRowInsets(EdgeInsets())
                         .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
                 
                 // System Controls Section
@@ -137,11 +138,9 @@ struct SystemListView: View {
         Group {
             if let systemInfo = containerService.systemInfo {
                 if systemInfo.dnsSettings.isEmpty {
-                    ContentUnavailableView(
-                        "No DNS Domains",
-                        systemImage: "network.slash",
-                        description: Text("Add a domain to enable container DNS resolution.")
-                    )
+                    ContentUnavailableView {
+                        Text("No DNS Domains")
+                    }
                     .listRowBackground(Color.clear)
                 } else {
                     ForEach(systemInfo.dnsSettings) { domain in
