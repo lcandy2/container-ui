@@ -47,6 +47,12 @@ class ContainerService {
     var errorMessage: String?
     
     private let xpcService = ContainerXPCServiceManager()
+
+    func refreshAll() async {
+        await refreshContainers()
+        await refreshImages()
+        await refreshSystemInfo()
+    }
     
     func refreshContainers() async {
         xpcClientLogger.info("🔄 ContainerService: Starting container refresh")
