@@ -169,6 +169,8 @@ public struct DNSDomain: Identifiable, Hashable {
 public enum SystemServiceStatus {
     case running
     case stopped
+    case starting
+    case error
     
     public var displayName: String {
         switch self {
@@ -176,6 +178,10 @@ public enum SystemServiceStatus {
             return "Running"
         case .stopped:
             return "Stopped"
+        case .starting:
+            return "Starting"
+        case .error:
+            return "Error"
         }
     }
     
@@ -185,6 +191,23 @@ public enum SystemServiceStatus {
             return .green
         case .stopped:
             return .gray
+        case .starting:
+            return .blue
+        case .error:
+            return .red
+        }
+    }
+    
+    public var icon: String {
+        switch self {
+        case .running:
+            return "checkmark.circle.fill"
+        case .stopped:
+            return "stop.circle.fill"
+        case .starting:
+            return "arrow.clockwise.circle.fill"
+        case .error:
+            return "exclamationmark.triangle.fill"
         }
     }
 }
