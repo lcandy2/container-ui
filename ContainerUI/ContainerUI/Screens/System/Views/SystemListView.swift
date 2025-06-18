@@ -101,8 +101,13 @@ struct SystemListView: View {
                 try await containerService.startSystem()
                 await containerService.refreshSystemInfo()
             } label: {
-                Label("Start", systemImage: "play.circle.fill")
-                    .frame(maxWidth: .infinity)
+                Label {
+                    Text("Start")
+                } icon: {
+                    Image(systemName: "play.circle.fill")
+                        .foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
@@ -113,8 +118,13 @@ struct SystemListView: View {
                 try await containerService.stopSystem()
                 await containerService.refreshSystemInfo()
             } label: {
-                Label("Stop", systemImage: "stop.circle.fill")
-                    .frame(maxWidth: .infinity)
+                Label {
+                    Text("Stop")
+                } icon: {
+                    Image(systemName: "stop.circle.fill")
+                        .foregroundStyle(.primary)
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
@@ -125,8 +135,13 @@ struct SystemListView: View {
                 try await containerService.restartSystem()
                 await containerService.refreshSystemInfo()
             } label: {
-                Label("Restart", systemImage: "arrow.clockwise.circle.fill")
-                    .frame(maxWidth: .infinity)
+                Label {
+                    Text("Restart")
+                } icon: {
+                    Image(systemName: "arrow.clockwise.circle.fill")
+                        .foregroundStyle(.primary)
+                }
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
             .controlSize(.large)
