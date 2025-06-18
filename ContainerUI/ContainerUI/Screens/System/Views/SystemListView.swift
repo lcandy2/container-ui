@@ -40,10 +40,10 @@ struct SystemListView: View {
                     HStack {
                         Text("DNS Management")
                         Spacer()
-                        Button("Add Domain", systemImage: "plus") {
-                            showingAddDomainAlert = true
-                        }
-                        .buttonStyle(.borderless)
+//                        Button("Add Domain", systemImage: "plus") {
+//                            showingAddDomainAlert = true
+//                        }
+//                        .buttonStyle(.borderless)
                     }
                 }
                 
@@ -136,12 +136,17 @@ struct SystemListView: View {
     
     private var dnsManagementContent: some View {
         Group {
+            // DNS Domains List
             if let systemInfo = containerService.systemInfo {
                 if systemInfo.dnsSettings.isEmpty {
-                    ContentUnavailableView {
-                        Text("No DNS Domains")
+                    HStack {
+                        Image(systemName: "network.slash")
+                            .foregroundStyle(.secondary)
+                        Text("No DNS domains configured")
+                            .foregroundStyle(.secondary)
+                        Spacer()
                     }
-                    .listRowBackground(Color.clear)
+                    .padding(.vertical, 8)
                 } else {
                     ForEach(systemInfo.dnsSettings) { domain in
                         dnsDomainRow(domain)
@@ -153,6 +158,7 @@ struct SystemListView: View {
                         .controlSize(.small)
                     Text("Loading DNS settings...")
                         .foregroundStyle(.secondary)
+                    Spacer()
                 }
             }
         }
@@ -160,49 +166,56 @@ struct SystemListView: View {
     
     private func dnsDomainRow(_ domain: DNSDomain) -> some View {
         HStack {
+            // Domain icon
+            Image(systemName: "network")
+                .frame(width: 20)
+            
+            // Domain info
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(domain.domain)
-                        .font(.headline)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
                     
                     if domain.isDefault {
                         Image(systemName: "star.fill")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.yellow)
                     }
                 }
                 
                 if domain.isDefault {
-                    Text("Default Domain")
-                        .font(.caption)
+                    Text("Default")
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
                 }
             }
             
             Spacer()
             
-            Menu {
-                if !domain.isDefault {
-                    Button {
-                        Task { await setDefaultDomain(domain.domain) }
-                    } label: {
-                        Label("Set as Default", systemImage: "star")
-                    }
-                    
-                    Divider()
-                }
-                
-                Button(role: .destructive) {
-                    Task { await deleteDomain(domain.domain) }
-                } label: {
-                    Label("Delete Domain", systemImage: "trash")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.borderless)
+            // Actions menu
+//            Menu {
+//                if !domain.isDefault {
+//                    Button {
+//                        Task { await setDefaultDomain(domain.domain) }
+//                    } label: {
+//                        Label("Set as Default", systemImage: "star")
+//                    }
+//                }
+//                
+//                Button(role: .destructive) {
+//                    Task { await deleteDomain(domain.domain) }
+//                } label: {
+//                    Label("Delete Domain", systemImage: "trash")
+//                }
+//            } label: {
+//                Image(systemName: "ellipsis.circle")
+//                    .foregroundStyle(.tertiary)
+//            }
+//            .buttonStyle(.borderless)
         }
+        .padding(.vertical, 4)
     }
     
 

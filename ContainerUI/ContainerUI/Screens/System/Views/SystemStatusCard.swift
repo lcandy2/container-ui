@@ -13,142 +13,58 @@ struct SystemStatusCard: View {
     let systemInfo: SystemInfo?
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header Section
-            HStack(alignment: .center, spacing: 16) {
-                // Status Icon
-                ZStack {
-                    Circle()
-                        .fill(statusBackgroundColor)
-                        .frame(width: 52, height: 52)
-                    
+        HStack(spacing: 16) {
+            // Status Icon
+            Circle()
+                .fill(statusBackgroundColor)
+                .frame(width: 44, height: 44)
+                .overlay {
                     Image(systemName: statusIconName)
-                        .font(.title2)
+                        .font(.title3)
                         .fontWeight(.medium)
                         .foregroundStyle(.white)
                 }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Container System")
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
-                    
-                    HStack(spacing: 6) {
-                        statusIndicator
-                        
-                        Text(statusText)
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundStyle(statusColor)
-                    }
-                }
-                
-                Spacer()
-                
-                // Chevron for potential navigation
-                Image(systemName: "chevron.right")
-                    .font(.caption)
+            
+            // System Info
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Container System")
+                    .font(.headline)
                     .fontWeight(.semibold)
-                    .foregroundStyle(.tertiary)
+                
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 6, height: 6)
+                    
+                    Text(statusText)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 16)
             
-            // Divider
-            Divider()
-                .padding(.horizontal, 20)
+            Spacer()
             
-            // Details Section
-            if let systemInfo = systemInfo {
-                VStack(spacing: 12) {
-                    // DNS Information
-                    HStack {
-                        Label {
-                            Text("DNS Domains")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        } icon: {
-                            Image(systemName: "network")
-                                .font(.caption)
-                                .foregroundStyle(.blue)
-                        }
-                        
-                        Spacer()
-                        
-                        Text("\(systemInfo.dnsSettings.count)")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary)
-                    }
+            // Kernel Info (if available)
+            if let systemInfo = systemInfo, let kernelInfo = systemInfo.kernelInfo {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Kernel")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .textCase(.uppercase)
                     
-                    // Kernel Information
-                    if let kernelInfo = systemInfo.kernelInfo {
-                        HStack {
-                            Label {
-                                Text("Kernel Version")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            } icon: {
-                                Image(systemName: "cpu")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
-                            
-                            Spacer()
-                            
-                            Text(kernelInfo)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        }
-                    }
+                    Text(kernelInfo.components(separatedBy: " ").first ?? kernelInfo)
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-                .padding(.top, 12)
-            } else {
-                // Loading state
-                VStack(spacing: 8) {
-                    HStack {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(.quaternary)
-                            .frame(width: 120, height: 12)
-                        
-                        Spacer()
-                        
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(.quaternary)
-                            .frame(width: 40, height: 12)
-                    }
-                    
-                    HStack {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(.quaternary)
-                            .frame(width: 100, height: 12)
-                        
-                        Spacer()
-                        
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(.quaternary)
-                            .frame(width: 60, height: 12)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 20)
-                .padding(.top, 12)
             }
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(20)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.quaternary.opacity(0.5), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(.separator.opacity(0.3), lineWidth: 0.5)
         )
-        .shadow(color: .black.opacity(0.04), radius: 8, x: 0, y: 2)
-        .shadow(color: .black.opacity(0.08), radius: 1, x: 0, y: 1)
     }
     
     // MARK: - Computed Properties
@@ -181,12 +97,6 @@ struct SystemStatusCard: View {
         case .starting:
             return .blue
         }
-    }
-    
-    private var statusIndicator: some View {
-        Circle()
-            .fill(statusColor)
-            .frame(width: 8, height: 8)
     }
     
     private var statusText: String {
