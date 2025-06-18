@@ -70,18 +70,7 @@ struct SystemStatusCard: View {
     // MARK: - Computed Properties
     
     private var statusIconName: String {
-        guard let systemInfo = systemInfo else { return "questionmark.circle.fill" }
-        
-        switch systemInfo.serviceStatus {
-        case .running:
-            return "checkmark.circle.fill"
-        case .stopped:
-            return "stop.circle.fill"
-        case .error:
-            return "exclamationmark.triangle.fill"
-        case .starting:
-            return "arrow.clockwise.circle.fill"
-        }
+        return "server.rack"
     }
     
     private var statusBackgroundColor: Color {
