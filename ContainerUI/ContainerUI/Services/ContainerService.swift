@@ -64,7 +64,14 @@ class ContainerService {
             xpcClientLogger.info("✅ ContainerService: Container refresh completed successfully")
         } catch {
             await MainActor.run {
-                errorMessage = "Failed to load containers: \(error.localizedDescription)"
+                let errorDescription = error.localizedDescription.lowercased()
+                if errorDescription.contains("xpc connection") || 
+                   errorDescription.contains("connection invalid") ||
+                   errorDescription.contains("interrupted") {
+                    errorMessage = "Container system is not running. Please start the system first."
+                } else {
+                    errorMessage = "Failed to load containers: \(error.localizedDescription)"
+                }
             }
             xpcClientLogger.error("❌ ContainerService: Container refresh failed: \(error.localizedDescription)")
             print("Container list error: \(error)")
@@ -82,7 +89,14 @@ class ContainerService {
                 images = newImages
             }
         } catch {
-            print("Image list error: \(error)")
+            let errorDescription = error.localizedDescription.lowercased()
+            if errorDescription.contains("xpc connection") || 
+               errorDescription.contains("connection invalid") ||
+               errorDescription.contains("interrupted") {
+                print("Image list error: Container system is not running")
+            } else {
+                print("Image list error: \(error)")
+            }
         }
     }
     
@@ -124,8 +138,26 @@ class ContainerService {
     func refreshSystemInfo() async {
         do {
             let serviceStatus = try await getSystemStatus()
-            let dnsSettings = try await listDNSDomains()
-            let kernelInfo = try await getKernelInfo()
+            
+            // Only try to get DNS settings and kernel info if system is running
+            var dnsSettings: [DNSDomain]
+            let kernelInfo: String?
+            
+            if serviceStatus == .running {
+                do {
+                    dnsSettings = try await listDNSDomains()
+                    kernelInfo = try await getKernelInfo()
+                } catch {
+                    // If DNS/kernel info fails but system is running, use empty defaults
+                    print("Failed to get DNS/kernel info: \(error)")
+                    dnsSettings = []
+                    kernelInfo = nil
+                }
+            } else {
+                // System is stopped, use empty defaults
+                dnsSettings = []
+                kernelInfo = nil
+            }
             
             let newSystemInfo = SystemInfo(
                 serviceStatus: serviceStatus,
@@ -138,11 +170,43 @@ class ContainerService {
             }
         } catch {
             print("Failed to refresh system info: \(error)")
+            // Create a default SystemInfo with stopped status
+            await MainActor.run {
+                systemInfo = SystemInfo(
+                    serviceStatus: .stopped,
+                    dnsSettings: [],
+                    kernelInfo: nil
+                )
+            }
         }
     }
     
     func getSystemStatus() async throws -> SystemServiceStatus {
-        return try await xpcService.getSystemStatus()
+        // Use container ls as a reliable way to check if system is running
+        // When system is stopped: container ls fails with XPC connection error
+        // When system is running: container ls succeeds (may return empty list)
+        do {
+            _ = try await xpcService.listContainers()
+            // If listContainers succeeds, system is running
+            return .running
+        } catch {
+            // Check if the error indicates system is not running
+            let errorDescription = error.localizedDescription.lowercased()
+            if errorDescription.contains("xpc connection") || 
+               errorDescription.contains("connection invalid") ||
+               errorDescription.contains("interrupted") {
+                // System is not running
+                return .stopped
+            } else {
+                // Try the original system status method as fallback
+                do {
+                    return try await xpcService.getSystemStatus()
+                } catch {
+                    // If both methods fail, assume system is stopped
+                    return .stopped
+                }
+            }
+        }
     }
     
     func startSystem() async throws {

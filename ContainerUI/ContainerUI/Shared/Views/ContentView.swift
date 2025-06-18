@@ -26,7 +26,7 @@ struct ContentView: View {
                 }
                 
                 // Bottom section for system
-                Divider()
+                Spacer()
                 
                 List(selection: $selectedTab) {
                     NavigationLink(value: AppTab.system) {
