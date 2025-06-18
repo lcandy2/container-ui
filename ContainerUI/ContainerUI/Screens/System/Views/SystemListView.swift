@@ -15,7 +15,7 @@ struct SystemListView: View {
     @State private var newDomainName = ""
     @State private var showingAddDomainAlert = false
     @State private var isRefreshing = false
-    @State private var showingInspector = false
+    @State private var showingInspector = true
     
     var body: some View {
         NavigationStack {
