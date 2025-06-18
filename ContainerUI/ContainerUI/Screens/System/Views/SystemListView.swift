@@ -15,6 +15,7 @@ struct SystemListView: View {
     @State private var newDomainName = ""
     @State private var showingAddDomainAlert = false
     @State private var isRefreshing = false
+    @State private var showingInspector = false
     
     var body: some View {
         NavigationStack {
@@ -45,23 +46,26 @@ struct SystemListView: View {
                     }
                 }
                 
-                // System Logs Section
-                Section("System Logs") {
-                    systemLogsContent
-                }
+
             }
             .navigationTitle("System")
             .refreshable {
                 await refreshSystemInfo()
             }
             .toolbar {
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
                     Button {
                         Task { await refreshSystemInfo() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
                     .disabled(isRefreshing)
+                    
+                    Button {
+                        showingInspector.toggle()
+                    } label: {
+                        Image(systemName: "sidebar.right")
+                    }
                 }
             }
             .alert("Add DNS Domain", isPresented: $showingAddDomainAlert) {
@@ -78,6 +82,9 @@ struct SystemListView: View {
                 .disabled(newDomainName.isEmpty || !isValidDomain(newDomainName))
             } message: {
                 Text("Enter a DNS domain name to add to the system configuration.")
+            }
+            .inspector(isPresented: $showingInspector) {
+                SystemInspectorView()
             }
         }
     }
@@ -199,24 +206,7 @@ struct SystemListView: View {
         }
     }
     
-    // MARK: - System Logs Content
-    
-    private var systemLogsContent: some View {
-        Button {
-            let logSource = containerService.createSystemLogSource()
-            openWindow(id: "universal-logs", value: logSource.id)
-        } label: {
-            HStack {
-                Label("View System Logs", systemImage: "doc.text")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Image(systemName: "arrow.up.right.square")
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.primary)
-    }
+
     
     // MARK: - Helper Methods
     
