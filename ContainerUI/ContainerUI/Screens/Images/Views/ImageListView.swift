@@ -18,7 +18,25 @@ struct ImageListView: View {
     
     var body: some View {
         Group {
-            if containerService.images.isEmpty {
+            // Check if system is stopped
+            if containerService.systemInfo?.serviceStatus == .stopped {
+                ContentUnavailableView {
+                    Label("Container System is Not Running", systemImage: "server.rack")
+                } actions: {
+                    Button("Turn On") {
+                        Task {
+                            do {
+                                try await containerService.startSystem()
+                                await containerService.refreshSystemInfo()
+                                await containerService.refreshImages()
+                            } catch {
+                                errorMessage = "Failed to start system: \(error.localizedDescription)"
+                            }
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            } else if containerService.images.isEmpty {
                 ContentUnavailableView(
                     "No Images",
                     systemImage: "externaldrive",
