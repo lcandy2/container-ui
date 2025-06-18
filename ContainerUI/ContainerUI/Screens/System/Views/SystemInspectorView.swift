@@ -14,39 +14,20 @@ struct SystemInspectorView: View {
     @Environment(\.openWindow) private var openWindow
     
     var body: some View {
-        List {
-            Section("System Logs") {
-                Button("View System Logs") {
-                    let logSource = containerService.createSystemLogSource()
-                    openWindow(id: "universal-logs", value: logSource.id)
-                }
-                
-                Button("View Boot Logs") {
-                    // Assuming there's a boot log source method
-                    let logSource = containerService.createSystemLogSource()
-                    openWindow(id: "universal-logs", value: logSource.id)
-                }
-                
-                Button("View Error Logs") {
-                    // Assuming there's an error log source method
-                    let logSource = containerService.createSystemLogSource()
-                    openWindow(id: "universal-logs", value: logSource.id)
+        ScrollView {
+            VStack(alignment: .leading) {
+                Section("System Logs") {
+                    Button("View System Logs") {
+                        let logSource = containerService.createSystemLogSource()
+                        openWindow(id: "universal-logs", value: logSource.id)
+                    }
                 }
             }
+            .padding(.vertical)
+            .frame(maxWidth: .infinity)
             
-            Section("Log Options") {
-                Button("Export All Logs") {
-                    // Export functionality could be added here
-                    print("Export logs functionality")
-                }
-                
-                Button("Clear Log Cache") {
-                    // Clear cache functionality could be added here
-                    print("Clear log cache functionality")
-                }
-            }
         }
-        .navigationTitle("System Logs")
+        .frame(maxWidth: .infinity)
     }
 }
 
