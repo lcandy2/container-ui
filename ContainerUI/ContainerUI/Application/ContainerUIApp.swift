@@ -7,10 +7,16 @@
 //
 
 import SwiftUI
+import Sparkle
 
 @main
 struct ContainerUIApp: App {
     @State private var containerService = ContainerService()
+    private let updaterController: SPUStandardUpdaterController
+    
+    init() {
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -33,5 +39,13 @@ struct ContainerUIApp: App {
         .windowResizability(.contentSize)
         .windowStyle(.titleBar)
         .defaultSize(width: 800, height: 600)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates...") {
+                    updaterController.updater.checkForUpdates()
+                }
+                .keyboardShortcut("u", modifiers: .command)
+            }
+        }
     }
 }
