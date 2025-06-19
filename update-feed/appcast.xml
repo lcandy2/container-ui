@@ -2,15 +2,15 @@
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
         <title>ContainerUI Updates</title>
-        <link>https://github.com/YOUR_USERNAME/container-ui</link>
+        <link>https://github.com/lcandy2/container-ui</link>
         <description>Updates for ContainerUI - macOS Container Management App</description>
         <language>en</language>
         
         <item>
-            <title>Version 0.1</title>
-            <link>https://github.com/YOUR_USERNAME/container-ui</link>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>0.1</sparkle:shortVersionString>
+            <title>Version 0.1 (Build 3)</title>
+            <link>https://github.com/lcandy2/container-ui</link>
+            <sparkle:version>3</sparkle:version>
+            <sparkle:shortVersionString>0.1-b3</sparkle:shortVersionString>
             <description><![CDATA[
                 <h2>ContainerUI 0.1</h2>
                 <ul>
@@ -21,10 +21,9 @@
                 </ul>
             ]]></description>
             <pubDate>Thu, 19 Jun 2025 12:00:00 +0000</pubDate>
-            <enclosure url="https://github.com/YOUR_USERNAME/container-ui/releases/download/v0.1/ContainerUI-0.1.zip"
+            <enclosure url="https://github.com/lcandy2/container-ui/releases/download/v0.1-b3/ContainerUI.zip"
                        length="0"
-                       type="application/octet-stream"
-                       sparkle:edSignature="SIGNATURE_PLACEHOLDER" />
+                       type="application/octet-stream" />
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
         </item>
         

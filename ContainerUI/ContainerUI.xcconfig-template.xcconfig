@@ -1,0 +1,15 @@
+//
+//  Config.xcconfig
+//  ContainerUI
+//
+//  Created by 甜檸Citron(lcandy2) on 6/19/25.
+//  Copyright © 2025 https://github.com/lcandy2. All Rights Reserved.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://developer.apple.com/documentation/xcode/adding-a-build-configuration-file-to-your-project
+
+// Replace YOUR_DEVELOPMENT_TEAM_ID with your actual development team ID
+// Remove `-template` from the file name
+
+DEVELOPMENT_TEAM = 

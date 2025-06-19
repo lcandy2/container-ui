@@ -85,6 +85,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
+# Secrets
+ContainerUI.xcconfig
+
 # AI Helpers
 buildServer.json
 .claude

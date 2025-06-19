@@ -10,6 +10,8 @@
 		24681E642E01116000B35F5C /* ContainerXPCService.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 24681E582E01116000B35F5C /* ContainerXPCService.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		24681E7F2E011EE000B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E7E2E011EE000B35F5C /* ContainerModels */; };
 		24681E812E011EE700B35F5C /* ContainerModels in Frameworks */ = {isa = PBXBuildFile; productRef = 24681E802E011EE700B35F5C /* ContainerModels */; };
+		2471850E2E03E09400D75554 /* ContainerUI.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2471850D2E03E09400D75554 /* ContainerUI.xcconfig */; };
+		2471850F2E03E09400D75554 /* ContainerUI.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 2471850D2E03E09400D75554 /* ContainerUI.xcconfig */; };
 		24CB04292E0259B300766010 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 24CB04282E0259B300766010 /* Sparkle */; };
 		24CB04762E027B8D00766010 /* ButtonKit in Frameworks */ = {isa = PBXBuildFile; productRef = 24CB04752E027B8D00766010 /* ButtonKit */; };
 /* End PBXBuildFile section */
@@ -59,6 +61,7 @@
 		24681E582E01116000B35F5C /* ContainerXPCService.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = ContainerXPCService.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
 		24681E6E2E01119000B35F5C /* ContainerHelper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = ContainerHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		24681E7C2E011D9B00B35F5C /* ContainerModels */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = ContainerModels; path = Packages/ContainerModels; sourceTree = "<group>"; };
+		2471850D2E03E09400D75554 /* ContainerUI.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = ContainerUI.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -124,6 +127,7 @@
 		24322FF52E000C5A0061A2C9 = {
 			isa = PBXGroup;
 			children = (
+				2471850D2E03E09400D75554 /* ContainerUI.xcconfig */,
 				24681E7C2E011D9B00B35F5C /* ContainerModels */,
 				243230002E000C5B0061A2C9 /* ContainerUI */,
 				24681E592E01116000B35F5C /* ContainerXPCService */,
@@ -277,6 +281,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2471850E2E03E09400D75554 /* ContainerUI.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -284,6 +289,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2471850F2E03E09400D75554 /* ContainerUI.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -452,7 +458,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -470,7 +477,7 @@
 				INFOPLIST_FILE = ContainerUI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ContainerBay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 甜檸Citron(lcandy2). All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -495,7 +502,8 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
@@ -513,7 +521,7 @@
 				INFOPLIST_FILE = ContainerUI/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ContainerBay;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 甜檸Citron(lcandy2). All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -538,6 +546,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ContainerXPCService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ContainerBayXPCService;
@@ -561,6 +570,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = "$(DEVELOPMENT_TEAM)";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ContainerXPCService/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ContainerBayXPCService;
