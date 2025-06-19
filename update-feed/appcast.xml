@@ -22,8 +22,9 @@
             ]]></description>
             <pubDate>Thu, 19 Jun 2025 12:00:00 +0000</pubDate>
             <enclosure url="https://github.com/lcandy2/container-ui/releases/download/v0.1-b3/ContainerUI.zip"
-                       length="0"
-                       type="application/octet-stream" />
+                       length="6807606"
+                       type="application/octet-stream"
+                       sparkle:edSignature="CILGmCSlgMowYo/nvlhDjaIL0oM+PQsR61pzi81wnlIQHfoVSnbqI80qO+Mt2bg9Cgb1ILcGQ8n5zujJVDcwAA==" />
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
         </item>
         
